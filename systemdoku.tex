@@ -211,9 +211,12 @@ was einen stabilen Farbfilter schwer umsetzbar macht.
 Der HSV-Farbraum (Hue, Saturation, Value, also Farbton, Sättigung und
 Helligkeit) trennt diese Eigenschaften voneinander. Der Farbton bleibt
 dabei weitgehend unabhängig von der Beleuchtung. Wenn wir nach einem
-orangefarbenen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
+blauen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
 zu definieren, und der Filter funktioniert auch bei wechselnden
-Lichtverhältnissen zuverlässig.
+Lichtverhältnissen zuverlässig. Da wir einen blauen Ball verwenden,
+haben wir die HSV-Grenzwerte anhand typischer Standardwerte für Blau
+gewählt und für unsere Lichtverhältnisse leicht angepasst.
+% TODO: Quelle für HSV-Standardwerte ergänzen
 
 % Grafik: Gegenüberstellung RGB vs HSV Farbraum, visuell
 \begin{figure}[h]
@@ -257,15 +260,6 @@ Damit ein Treffer als gültig gewertet wird, muss die gefundene Fläche
 mindestens 500~Pixel² groß und der Radius mindestens 10~Pixel sein.
 Diese Mindestgrenzen verhindern, dass Reflexionen oder Bildrauschen
 fälschlicherweise als Ball erkannt werden.
-
-\subsection{HSV-Kalibrierung}
-
-Die genauen HSV-Grenzwerte hängen vom verwendeten Ball und den
-Lichtverhältnissen ab. Um diese nicht von Hand bestimmen zu müssen,
-haben wir eine automatische Kalibrierungsfunktion implementiert:
-Der Ball wird in die Bildmitte gehalten, und die Funktion liest die
-HSV-Werte aus einem kleinen Bereich in der Mitte aus und berechnet
-daraus automatisch passende Grenzwerte.
 
 
 \section{Videostream und Frame-Auswahl}
