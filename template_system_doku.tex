@@ -173,49 +173,49 @@
 \begin{document}
 
 % ── Titelseite (AR10-Stil) ───────────────────────────────────
-\begin{titlepage}
+% Kein titlepage-Environment (scrbook würde Leerseite einfügen).
+% Hauptinhalt mit absolutem TikZ-Layout, Logo separat per overlay.
 \thispagestyle{empty}
-\begin{tikzpicture}[remember picture, overlay]
+\vspace*{-\topmargin}\vspace*{-\headheight}\vspace*{-\headsep}%
+\noindent\hspace*{-\oddsidemargin}\hspace*{-1in}%
+\begin{tikzpicture}[x=1mm, y=1mm]
+  \useasboundingbox (0,0) rectangle (210,297);
 
-  % Blauer oberer Block (55 % der Seite)
-  \fill[htbblue]
-    (current page.north west)
-    rectangle
-    ([yshift=0.45\paperheight]current page.south east);
+  % Blauer oberer Block (obere 163 mm = 55 %)
+  \fill[htbblue] (0,134) rectangle (210,297);
 
   % Roboterbild oben links
-  \node[anchor=north west]
-    at ([xshift=8mm, yshift=-8mm]current page.north west) {%
-      \IfFileExists{robot_cover.png}{%
-        \includegraphics[width=88mm, keepaspectratio]{robot_cover.png}%
-      }{%
-        \IfFileExists{robot_cover.jpg}{%
-          \includegraphics[width=88mm, keepaspectratio]{robot_cover.jpg}%
-        }{}%
-      }%
-    };
+  \node[anchor=north west] at (8,292) {%
+    \IfFileExists{robot_cover.png}{%
+      \includegraphics[width=88mm, keepaspectratio]{robot_cover.png}%
+    }{%
+      \IfFileExists{robot_cover.jpg}{%
+        \includegraphics[width=88mm, keepaspectratio]{robot_cover.jpg}%
+      }{}%
+    }%
+  };
 
   % "Balancing Robot" unten rechts im blauen Block
-  \node[anchor=south east, align=right]
-    at ([xshift=-8mm, yshift=0.45\paperheight+8mm]current page.south east) {%
-      {\fontsize{46}{50}\selectfont\bfseries\color{white}Balancing Robot}\\[3pt]
-    };
+  \node[anchor=south east, align=right] at (202,142) {%
+    {\fontsize{46}{50}\selectfont\bfseries\color{white}Balancing Robot}\\[3pt]
+  };
 
   % "Systemdokumentation" oben links im weißen Block
-  \node[anchor=north west, align=left]
-    at ([xshift=14mm, yshift=0.45\paperheight-10mm]current page.south west) {%
-      {\fontsize{26}{32}\selectfont\bfseries\color{black}Systemdokumentation}\\[5pt]
-      {\Large\color{htbtextgray}HTW Saar · WiSe 2025/26}%
-    };
+  \node[anchor=north west, align=left] at (14,126) {%
+    {\fontsize{26}{32}\selectfont\bfseries\color{black}Systemdokumentation}\\[5pt]
+    {\Large\color{htbtextgray}HTW Saar · WiSe 2025/26}%
+  };
 
-  % HTW-Logo unten rechts
+\end{tikzpicture}%
+% Logo separat per overlay (immer korrekt positioniert, braucht 2 Kompilierungen)
+\begin{tikzpicture}[remember picture, overlay]
   \node[anchor=south east]
     at ([xshift=-14mm, yshift=14mm]current page.south east) {%
       \includegraphics[height=18mm, keepaspectratio]{htw_logo.png}%
     };
-
-\end{tikzpicture}
-\end{titlepage}
+\end{tikzpicture}%
+\newpage
+\pagestyle{fancy}
 
 % ── Inhaltsverzeichnis ──────────────────────────────────────
 \tableofcontents
