@@ -139,11 +139,10 @@ Designentscheidungen stecken.
 Die Kamera ist die einzige Informationsquelle des Systems über die Position
 des Balls. Damit diese Informationen verlässlich sind, muss sie zuerst
 kalibriert werden. Jede Kamera verzerrt das Bild ein bisschen, vor allem
-an den Rändern, wo gerade Linien leicht gebogen wirken. Das klingt zunächst
-nach einem kleinen Problem, hat aber einen konkreten Effekt: Ohne
-Kalibrierung stimmt die gemessene Ballposition nicht genau mit der echten
-Position auf der Plattform überein, und der Regler würde systematisch
-in die falsche Richtung steuern.
+an den Rändern, wo gerade Linien leicht gebogen wirken. Das hat einen
+konkreten Effekt: Ohne Kalibrierung weicht die gemessene Ballposition
+leicht von der echten Position ab, und der Regler würde dauerhaft mit
+einem kleinen Fehler arbeiten.
 
 Bei der Kalibrierung werden die sogenannten \textit{intrinsischen Parameter}
 der Kamera bestimmt. Dazu gehören die Kameramatrix, die beschreibt wie die
