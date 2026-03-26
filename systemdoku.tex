@@ -270,10 +270,10 @@ lesen. Das Problem dabei: Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
 Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
-Wir haben das anders gelöst: Ein eigener Thread liest die Kamera
+Wir haben das anders gelöst. Ein eigener Thread liest die Kamera
 so schnell wie möglich aus und speichert dabei immer nur das aktuellste Bild.
-Wenn der Regler ein Bild anfragt, bekommt er genau dieses: immer
-den neuesten Stand, egal wann er fragt.
+Wenn der Regler ein Bild anfragt, bekommt er genau dieses und hat damit
+immer den neuesten Stand, egal wann er fragt.
 
 \begin{figure}[h]
   \centering
