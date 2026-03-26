@@ -93,25 +93,24 @@
 }
 
 % ── Kapitelüberschriften ─────────────────────────────────────
-%   Blaue Box links + große Kapitelnummer
+% Hilfsmakro nötig: tcolorbox mit #1 direkt in \titleformat
+% führt zu "Illegal parameter number" in titlesec
+\newcommand{\chapterheadbox}[1]{%
+  \begin{tcolorbox}[
+    enhanced, sharp corners,
+    colback=htbblue, colframe=htbblue,
+    left=6mm, right=6mm, top=4mm, bottom=4mm,
+    width=\textwidth,
+  ]
+    \color{white}#1
+  \end{tcolorbox}%
+}
 \titleformat{\chapter}[block]
   {\normalfont\Huge\bfseries}
   {}
   {0pt}
-  {%
-    \begin{tcolorbox}[
-      enhanced, sharp corners,
-      colback=htbblue, colframe=htbblue,
-      left=6mm, right=6mm, top=4mm, bottom=4mm,
-      width=\textwidth,
-    ]
-      \color{white}#1
-    \end{tcolorbox}%
-  }
+  {\chapterheadbox}
 \titlespacing*{\chapter}{0pt}{-20pt}{20pt}
-
-% Unnummerierte Kapitel (z.B. Inhaltsverzeichnis): kein tcolorbox, schlicht
-\titleformat*{\chapter}{\normalfont\Huge\bfseries\color{black}}
 
 % Abschnittsüberschriften
 \titleformat{\section}
