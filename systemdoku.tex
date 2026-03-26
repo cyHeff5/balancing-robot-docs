@@ -140,8 +140,8 @@ Die Kamera ist die einzige Informationsquelle des Systems über die Position
 des Balls. Damit diese Informationen verlässlich sind, muss sie zuerst
 kalibriert werden. Jede Kamera verzerrt das Bild ein bisschen, vor allem
 an den Rändern, wo gerade Linien leicht gebogen wirken. Das hat einen
-konkreten Effekt: Ohne Kalibrierung weicht die gemessene Ballposition
-leicht von der echten Position ab, und der Regler würde dauerhaft mit
+konkreten Effekt, denn ohne Kalibrierung weicht die gemessene Ballposition
+leicht von der echten Position ab und der Regler würde dauerhaft mit
 einem kleinen Fehler arbeiten.
 
 Bei der Kalibrierung werden die sogenannten \textit{intrinsischen Parameter}
@@ -266,7 +266,7 @@ fälschlicherweise als Ball erkannt werden.
 
 Die Kamera liefert einen kontinuierlichen Videostream. Eine naive Umsetzung
 würde bei jeder Anfrage einfach das nächste verfügbare Bild aus dem Puffer
-lesen. Das Problem dabei: Je nachdem wie schnell der Regler läuft und wie
+lesen. Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
 Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
@@ -293,7 +293,7 @@ zugreifen können, ohne sich gegenseitig zu stören, wird der Zugriff
 \section{ROI-Tracking}
 
 Statt in jedem Bild das gesamte Kamerabild nach dem Ball zu durchsuchen,
-nutzen wir ROI-Tracking (Region of Interest). Die Idee dahinter ist einfach:
+nutzen wir ROI-Tracking (Region of Interest). Die Idee dahinter ist einfach.
 Wenn wir wissen, wo der Ball im letzten Bild war, muss er im nächsten Bild
 ungefähr am gleichen Ort sein. Wir suchen also nur noch in einem kleinen
 Ausschnitt rund um die letzte bekannte Position.
@@ -324,9 +324,8 @@ braucht auch die Geschwindigkeit des Balls, um nicht nur auf die aktuelle
 Position zu reagieren, sondern auch auf die Bewegungsrichtung. Nur so
 lässt sich verhindern, dass der Ball über die Mitte hinausschießt.
 
-Wir berechnen die Geschwindigkeit aus zwei aufeinanderfolgenden Messungen.
-Die Formel ist dabei denkbar einfach: Positionsänderung geteilt durch die
-vergangene Zeit:
+Wir berechnen die Geschwindigkeit aus zwei aufeinanderfolgenden Messungen,
+indem wir die Positionsänderung durch die vergangene Zeit teilen.
 
 \[
   v_x = \frac{x_{\text{neu}} - x_{\text{alt}}}{\Delta t}, \qquad
@@ -341,7 +340,7 @@ liefert die Komponente einen Zustand mit \texttt{valid = False} zurück.
 Der Regler wertet dieses Flag aus und fährt die Plattform in diesem Fall
 in die Neutralposition.
 
-Der vollständige Ausgabe-Datensatz der CV-Komponente enthält:
+Der vollständige Ausgabe-Datensatz der CV-Komponente setzt sich wie folgt zusammen.
 
 \begin{center}
 \begin{tabular}{lll}
@@ -362,8 +361,8 @@ Der vollständige Ausgabe-Datensatz der CV-Komponente enthält:
 
 Damit der Regler stabil funktioniert, muss die Verarbeitungszeit der
 CV-Komponente klein genug sein. Wenn die Erkennung zu langsam ist,
-bekommt der Regler veraltete Informationen: Der Ball hat sich schon
-weiterbewegt, während der Regler noch auf die letzte Messung reagiert.
+bekommt der Regler veraltete Informationen, weil der Ball sich schon
+weiterbewegt hat, während der Regler noch auf die letzte Messung reagiert.
 
 Wir haben deshalb die Latenz auf dem Raspberry Pi gemessen. Dabei wird
 unterschieden zwischen der Zeit, die das Holen des aktuellen Frames
