@@ -112,13 +112,17 @@
 % ============================================================
 \chapter{Computer Vision}
 
-Die Computer-Vision-Komponente ist dafür zuständig, den Ball auf der Plattform
-zu erkennen und seine Position sowie Geschwindigkeit zu bestimmen.
-Diese Informationen werden direkt an den Regler weitergegeben, der daraufhin
-die Plattform neigt, um den Ball in der Mitte zu halten.
+Damit der Roboter den Ball balancieren kann, muss er immer wissen, wo
+der Ball gerade ist und in welche Richtung er sich bewegt. Diese Aufgabe
+übernimmt die Computer-Vision-Komponente. Sie wertet das Kamerabild in
+Echtzeit aus und liefert dem Regler die nötigen Informationen, damit dieser
+die Plattform rechtzeitig in die richtige Richtung neigen kann.
+
 Der Output besteht aus vier Werten: Position~$(x, y)$ und
 Geschwindigkeit~$(v_x, v_y)$, jeweils in Pixeln bzw. Pixeln pro Sekunde,
-relativ zur Bildmitte.
+relativ zur Bildmitte. In diesem Kapitel wird erklärt, wie diese Werte
+berechnet werden und welche Überlegungen hinter den einzelnen
+Designentscheidungen stecken.
 
 % Grafik: Blockdiagramm Gesamtsystem mit hervorgehobenem CV-Block
 \begin{figure}[h]
@@ -132,17 +136,21 @@ relativ zur Bildmitte.
 
 \section{Kamerakalibrierung}
 
-Bevor wir den Ball zuverlässig erkennen können, muss die Kamera kalibriert
-werden. Jede Kamera verzerrt das Bild leicht -- vor allem an den Rändern
-wirken gerade Linien gebogen. Ohne Kalibrierung würde die gemessene
-Ballposition nicht genau mit der echten Position auf der Plattform
-übereinstimmen, was den Regler systematisch falsch steuern würde.
+Die Kamera ist die einzige Informationsquelle des Systems über die Position
+des Balls. Damit diese Informationen verlässlich sind, muss sie zuerst
+kalibriert werden. Jede Kamera verzerrt das Bild ein bisschen, vor allem
+an den Rändern, wo gerade Linien leicht gebogen wirken. Das klingt zunächst
+nach einem kleinen Problem, hat aber einen konkreten Effekt: Ohne
+Kalibrierung stimmt die gemessene Ballposition nicht genau mit der echten
+Position auf der Plattform überein, und der Regler würde systematisch
+in die falsche Richtung steuern.
 
 Bei der Kalibrierung werden die sogenannten \textit{intrinsischen Parameter}
-der Kamera bestimmt: die Kameramatrix, die beschreibt wie die Kamera
-die 3D-Welt auf das 2D-Bild projiziert, und die Verzerrungskoeffizienten,
-die die Linsenverzerrung beschreiben. Mit diesen Parametern lässt sich jedes
-aufgenommene Bild rechnerisch entzerren.
+der Kamera bestimmt. Dazu gehören die Kameramatrix, die beschreibt wie die
+Kamera die dreidimensionale Welt auf das zweidimensionale Bild projiziert,
+sowie die Verzerrungskoeffizienten, die die Linsenverzerrung mathematisch
+beschreiben. Mit diesen Parametern lässt sich jedes aufgenommene Bild
+anschließend rechnerisch entzerren.
 
 % Grafik: Bild vorher/nachher Entzerrung
 \begin{figure}[h]
@@ -153,18 +161,21 @@ aufgenommene Bild rechnerisch entzerren.
   \caption{Kamerabild vor (links) und nach (rechts) der Entzerrung}
 \end{figure}
 
-Zur Kalibrierung haben wir die klassische Schachbrettmethode verwendet, die
-auch in der OpenCV-Bibliothek implementiert ist. Dabei wird ein Schachbrettmuster
-aus mehreren Blickwinkeln fotografiert. OpenCV erkennt die Ecken des Musters
-automatisch und berechnet daraus die Kameraparameter.
+Zur Kalibrierung haben wir die klassische Schachbrettmethode verwendet,
+die auch in der OpenCV-Bibliothek implementiert ist. Die Idee dabei ist,
+ein Schachbrettmuster aus mehreren verschiedenen Blickwinkeln zu
+fotografieren. Da OpenCV die Ecken des Musters automatisch erkennt,
+kann es daraus berechnen, wie die Kamera das Bild verzerrt.
 
-Damit wir möglichst viele verschiedene Perspektiven abdecken, haben wir den
-Aufnahmeprozess mit der Plattform automatisiert: Die Plattform kippt
-nacheinander in sieben verschiedene Positionen (Mitte, links, rechts, vorne,
-hinten und zwei Diagonalen), und die Kamera macht bei jeder Position ein Foto.
-So müssen wir das Schachbrett nur einmal auf die Plattform legen und der Rest
-läuft automatisch. Die genauen Winkel sind in der Datei
-\texttt{positions.json} hinterlegt.
+Wichtig ist dabei, möglichst viele verschiedene Perspektiven abzudecken,
+damit die Kalibrierung auch an den Bildrändern zuverlässig ist. Um das
+ohne viel manuellen Aufwand zu erreichen, haben wir den Aufnahmeprozess
+direkt mit der Plattform automatisiert. Die Plattform kippt nacheinander
+in sieben verschiedene Positionen (Mitte, links, rechts, vorne, hinten
+und zwei Diagonalen), und die Kamera macht bei jeder Position automatisch
+ein Foto. Man muss das Schachbrett also nur einmal auf die Plattform legen,
+den Rest erledigt das System von selbst. Die genauen Kippwinkel sind in
+der Datei \texttt{positions.json} hinterlegt.
 
 % Grafik: Foto des Schachbretts auf der Plattform
 \begin{figure}[h]
@@ -177,32 +188,36 @@ läuft automatisch. Die genauen Winkel sind in der Datei
 
 Das Ergebnis der Kalibrierung wird als \texttt{intrinsics.npz} gespeichert
 und enthält die Kameramatrix sowie die Verzerrungskoeffizienten.
-Als Qualitätsmaß gibt OpenCV den sogenannten RMS-Reprojektionsfehler aus --
-je kleiner, desto besser. Bei unserer Kalibrierung lag dieser Wert
+Als Qualitätsmaß gibt OpenCV den sogenannten RMS-Reprojektionsfehler aus,
+der angibt wie genau die berechneten Parameter zum tatsächlichen Bild passen.
+Je kleiner der Wert, desto besser. Bei unserer Kalibrierung lag er
 bei unter 1 Pixel, was für unsere Anwendung ausreichend genau ist.
 
 
 \section{Ballerkennung}
 
-Für die Erkennung des Balls haben wir uns für eine Farbfilter-basierte
-Methode entschieden. Der Ansatz ist einfach: Wir suchen im Bild nach allem,
-was die Farbe des Balls hat, und bestimmen dann den Mittelpunkt des
-gefundenen Bereichs.
+Nachdem die Kamera kalibriert ist, geht es darum, den Ball im Bild zu finden.
+Es gibt verschiedene Ansätze dafür, zum Beispiel maschinelles Lernen oder
+Kantenerkennung. Wir haben uns für eine farbbasierte Methode entschieden,
+weil sie für unseren Anwendungsfall einfach, schnell und gut nachvollziehbar
+ist. Der Grundgedanke ist folgender: Wir suchen im Bild nach allen Pixeln,
+die die Farbe des Balls haben, und berechnen dann den Mittelpunkt dieser Fläche.
 
 \subsection{Warum HSV statt RGB?}
 
-Farben werden in Kameras normalerweise als RGB-Werte gespeichert -- also als
-Kombination aus Rot, Grün und Blau. Das Problem dabei ist, dass sich die
-RGB-Werte einer Farbe stark ändern, wenn sich die Beleuchtung ändert.
-Ein orangefarbener Ball sieht bei Tageslicht und bei Kunstlicht in RGB
-sehr unterschiedlich aus.
+Farben werden in Kameras normalerweise als RGB-Werte gespeichert, also als
+Kombination aus Rot, Grün und Blau. Das klingt erstmal naheliegend, hat aber
+einen entscheidenden Nachteil: Die RGB-Werte einer Farbe verändern sich stark,
+sobald sich die Beleuchtung ändert. Ein orangefarbener Ball sieht bei
+Tageslicht und bei Kunstlicht in RGB sehr unterschiedlich aus. Damit wäre
+ein stabiler Farbfilter kaum realisierbar.
 
-Der HSV-Farbraum (Hue, Saturation, Value -- also Farbton, Sättigung,
-Helligkeit) trennt diese Eigenschaften voneinander. Der Farbton ist dabei
-weitgehend unabhängig von der Beleuchtung. Wenn wir also nach einem
-orangefarbenen Ball suchen, müssen wir im HSV-Raum nur einen Bereich im
-Farbton definieren -- und der bleibt auch bei wechselnder Beleuchtung
-stabil.
+Der HSV-Farbraum (Hue, Saturation, Value, also Farbton, Sättigung und
+Helligkeit) löst dieses Problem, indem er diese Eigenschaften voneinander
+trennt. Der Farbton bleibt dabei weitgehend unabhängig von der Beleuchtung.
+Wenn wir also nach einem orangefarbenen Ball suchen, reicht es im HSV-Raum
+einen Bereich im Farbton zu definieren, und der Filter funktioniert auch
+bei wechselnden Lichtverhältnissen zuverlässig.
 
 % Grafik: Gegenüberstellung RGB vs HSV Farbraum, visuell
 \begin{figure}[h]
@@ -210,7 +225,7 @@ stabil.
   \fbox{\parbox{0.85\textwidth}{\centering\vspace{15mm}
     [Visualisierung: gleicher Ball unter verschiedener Beleuchtung in RGB vs. HSV]
   \vspace{15mm}}}
-  \caption{Derselbe Ball unter verschiedener Beleuchtung -- RGB-Werte schwanken stark,
+  \caption{Derselbe Ball unter verschiedener Beleuchtung: RGB-Werte schwanken stark,
   HSV-Farbton bleibt stabil}
 \end{figure}
 
@@ -232,12 +247,12 @@ Die eigentliche Erkennung läuft in mehreren Schritten ab:
 \begin{enumerate}
   \item \textbf{Farbraum-Umrechnung:} Das Kamerabild wird von BGR nach HSV umgerechnet.
   \item \textbf{Farbmaske:} Alle Pixel, deren HSV-Wert im definierten Farbbereich
-        des Balls liegt, werden als weiß markiert -- der Rest als schwarz.
+        des Balls liegt, werden als weiß markiert; der Rest wird schwarz.
   \item \textbf{Rauschunterdrückung:} Ein Median-Filter glättet kleine Ausreißer,
         anschließend werden kleine isolierte Flecken durch morphologische
         Operationen entfernt.
   \item \textbf{Größte Fläche:} Aus allen verbleibenden weißen Bereichen wird der
-        größte ausgewählt -- das ist der Ball.
+        größte ausgewählt. Das ist der Ball.
   \item \textbf{Kreisanpassung:} Um den gefundenen Bereich wird der kleinstmögliche
         Kreis gelegt. Sein Mittelpunkt ist die erkannte Ballposition.
 \end{enumerate}
@@ -263,11 +278,11 @@ Die Kamera liefert einen kontinuierlichen Videostream. Eine naive Umsetzung
 würde bei jeder Anfrage einfach das nächste verfügbare Bild aus dem Puffer
 lesen. Das Problem dabei: Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
-Frames alt ist -- der Ball hat sich in der Zwischenzeit schon weiterbewegt.
+Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
 Wir haben das anders gelöst: Ein eigener Thread liest die Kamera
 so schnell wie möglich aus und speichert dabei immer nur das aktuellste Bild.
-Wenn der Regler ein Bild anfragt, bekommt er genau dieses -- also immer
+Wenn der Regler ein Bild anfragt, bekommt er genau dieses: immer
 den neuesten Stand, egal wann er fragt.
 
 \begin{figure}[h]
@@ -295,7 +310,7 @@ Ausschnitt rund um die letzte bekannte Position.
 
 Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
 Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
--- zum Beispiel weil er sich zu schnell bewegt hat -- wird automatisch wieder
+(zum Beispiel weil er sich zu schnell bewegt hat), wird automatisch wieder
 das gesamte Bild durchsucht und ein neuer Suchbereich festgelegt.
 
 Das Koordinatensystem hat seinen Ursprung in der Bildmitte. Positive
@@ -316,8 +331,8 @@ Alle Positionswerte werden in Pixeln angegeben, relativ zu diesem Mittelpunkt.
 
 Die Ballposition allein reicht für den Regler nicht aus. Ein PD-Regler
 braucht auch die Geschwindigkeit des Balls, um nicht nur auf die aktuelle
-Position zu reagieren, sondern auch auf die Bewegungsrichtung -- und so
-zu verhindern, dass der Ball über die Mitte hinausschießt.
+Position zu reagieren, sondern auch auf die Bewegungsrichtung. Nur so
+lässt sich verhindern, dass der Ball über die Mitte hinausschießt.
 
 Wir berechnen die Geschwindigkeit aus zwei aufeinanderfolgenden Messungen.
 Die Formel ist dabei denkbar einfach: Positionsänderung geteilt durch die
@@ -347,7 +362,7 @@ Der vollständige Ausgabe-Datensatz der CV-Komponente enthält:
   \texttt{vx}, \texttt{vy}   & px/s     & Geschwindigkeit in X- und Y-Richtung \\
   \texttt{v}                 & px/s     & Betrag der Gesamtgeschwindigkeit \\
   \texttt{dt}                & s        & Zeit seit der letzten Messung \\
-  \texttt{valid}             & --       & \texttt{True} wenn Ball erkannt wurde \\
+  \texttt{valid}             & Bool.    & \texttt{True} wenn Ball erkannt wurde \\
   \bottomrule
 \end{tabular}
 \end{center}
@@ -357,7 +372,7 @@ Der vollständige Ausgabe-Datensatz der CV-Komponente enthält:
 
 Damit der Regler stabil funktioniert, muss die Verarbeitungszeit der
 CV-Komponente klein genug sein. Wenn die Erkennung zu langsam ist,
-bekommt der Regler veraltete Informationen -- der Ball hat sich schon
+bekommt der Regler veraltete Informationen: Der Ball hat sich schon
 weiterbewegt, während der Regler noch auf die letzte Messung reagiert.
 
 Wir haben deshalb die Latenz auf dem Raspberry Pi gemessen. Dabei wird
