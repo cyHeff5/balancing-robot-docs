@@ -203,15 +203,15 @@
     \node[anchor=north west]
       at ([xshift=10mm, yshift=-8mm]current page.north west)
       {%
-        \IfFileExists{robot_cover.png}{%
-          \includegraphics[width=90mm, keepaspectratio]{robot_cover.png}%
+        \IfFileExists{robot_cover.jpg}{%
+          \includegraphics[width=90mm, keepaspectratio]{robot_cover.jpg}%
         }{%
           % Platzhalter wenn Bild fehlt
           \begin{tikzpicture}
             \draw[white, dashed, line width=1pt, opacity=0.4]
               (0,0) rectangle (90mm, 110mm);
             \node[white, opacity=0.5, font=\small] at (45mm,55mm)
-              {robot\_cover.png};
+              {robot\_cover.jpg};
           \end{tikzpicture}%
         }%
       };
