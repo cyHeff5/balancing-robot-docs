@@ -1,0 +1,112 @@
+% ============================================================
+%  Balancing Robot – Systemdokumentation
+%  Simples, stabiles Design. Compiler: pdflatex
+% ============================================================
+\documentclass[11pt, a4paper]{scrreprt}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[a4paper, top=25mm, bottom=30mm, left=25mm, right=25mm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage[automark]{scrlayer-scrpage}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\definecolor{htbblue}{HTML}{0078C8}
+
+% Kopfzeile
+\clearpairofpagestyles
+\ohead{\pagemark}
+\ihead{\headmark}
+\KOMAoptions{headsepline=true}
+
+% Überschriften blau
+\addtokomafont{chapter}{\color{htbblue}}
+\addtokomafont{section}{\color{htbblue}}
+\addtokomafont{subsection}{\color{htbblue}}
+
+\hypersetup{colorlinks=true, linkcolor=htbblue, urlcolor=htbblue}
+
+% ============================================================
+\begin{document}
+
+% ── Titelseite ───────────────────────────────────────────────
+\begin{titlepage}
+  \vspace*{40mm}
+  {\color{htbblue}\rule{\textwidth}{1.5pt}}
+  \vspace{6mm}
+
+  {\fontsize{32}{38}\selectfont\bfseries Balancing Robot\par}
+  \vspace{4mm}
+  {\Large\color{htbblue} Systemdokumentation\par}
+  \vspace{6mm}
+  {\color{htbblue}\rule{\textwidth}{0.5pt}}
+  \vspace{8mm}
+
+  {\normalsize
+    HTW Saar – Industrielle Robotik · WiSe 2025/26\\[4pt]
+    \textbf{Team:} Name 1, Name 2, Name 3, Name 4, Name 5\\[4pt]
+    \textbf{Datum:} \today
+  }
+
+  \vfill
+  \IfFileExists{htw_logo.png}{%
+    \includegraphics[height=16mm]{htw_logo.png}%
+  }{}
+\end{titlepage}
+
+% ── Inhaltsverzeichnis ───────────────────────────────────────
+\tableofcontents
+
+% ============================================================
+\chapter{Systemübersicht}
+
+\section{Projektziel}
+% TODO
+
+\section{Systemarchitektur}
+% TODO
+
+\section{Hardwarekomponenten}
+% TODO
+
+% ============================================================
+\chapter{Mechanik und Kinematik}
+
+\section{Plattformgeometrie}
+% TODO
+
+\section{Inverse Kinematik}
+% TODO
+
+\section{Solver}
+% TODO
+
+% ============================================================
+\chapter{Computer Vision}
+
+\section{Kamerakalibrierung}
+% TODO
+
+\section{Ballerkennung}
+% TODO
+
+\section{Geschwindigkeitsschätzung}
+% TODO
+
+% ============================================================
+\chapter{Regelung}
+
+\section{PD-Regler}
+% TODO
+
+\section{Regelloop}
+% TODO
+
+\end{document}

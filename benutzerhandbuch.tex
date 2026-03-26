@@ -1,0 +1,155 @@
+% ============================================================
+%  Balancing Robot – API & Benutzerhandbuch
+%  Simples, stabiles Design. Compiler: pdflatex
+% ============================================================
+\documentclass[11pt, a4paper]{scrreprt}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[a4paper, top=25mm, bottom=30mm, left=25mm, right=25mm]{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage[automark]{scrlayer-scrpage}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\definecolor{htbblue}{HTML}{0078C8}
+\definecolor{htbgray}{HTML}{F4F4F4}
+
+% Kopfzeile
+\clearpairofpagestyles
+\ohead{\pagemark}
+\ihead{\headmark}
+\KOMAoptions{headsepline=true}
+
+% Überschriften blau
+\addtokomafont{chapter}{\color{htbblue}}
+\addtokomafont{section}{\color{htbblue}}
+\addtokomafont{subsection}{\color{htbblue}}
+
+\hypersetup{colorlinks=true, linkcolor=htbblue, urlcolor=htbblue}
+
+% Code-Listings
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{htbblue}\bfseries,
+  backgroundcolor=\color{htbgray},
+  frame=single, framerule=0pt,
+  numbers=left, numberstyle=\tiny\color{gray},
+  breaklines=true,
+  showstringspaces=false,
+}
+
+% ============================================================
+\begin{document}
+
+% ── Titelseite ───────────────────────────────────────────────
+\begin{titlepage}
+  \vspace*{40mm}
+  {\color{htbblue}\rule{\textwidth}{1.5pt}}
+  \vspace{6mm}
+
+  {\fontsize{32}{38}\selectfont\bfseries Balancing Robot\par}
+  \vspace{4mm}
+  {\Large\color{htbblue} API \& Benutzerhandbuch\par}
+  \vspace{6mm}
+  {\color{htbblue}\rule{\textwidth}{0.5pt}}
+  \vspace{8mm}
+
+  {\normalsize
+    HTW Saar – Industrielle Robotik · WiSe 2025/26\\[4pt]
+    \textbf{Version:} 1.0\quad\textbf{Datum:} \today
+  }
+
+  \vfill
+  \IfFileExists{htw_logo.png}{%
+    \includegraphics[height=16mm]{htw_logo.png}%
+  }{}
+\end{titlepage}
+
+% ── Inhaltsverzeichnis ───────────────────────────────────────
+\tableofcontents
+
+% ============================================================
+\chapter{Schnellstart}
+
+\section{Voraussetzungen}
+% TODO
+
+\section{Laptop-Test ohne Hardware}
+% TODO
+
+\section{Start auf dem Raspberry Pi}
+% TODO
+
+% ============================================================
+\chapter{Modul: balancing\_platform}
+
+\section{Klasse Platform}
+% TODO
+
+\section{Methoden}
+% TODO
+
+% ============================================================
+\chapter{Modul: hardware}
+
+\section{MockServoDriver}
+% TODO
+
+\section{PCA9685Driver}
+% TODO
+
+% ============================================================
+\chapter{Modul: kinematik}
+
+\section{KinematicsEngine}
+% TODO
+
+\section{KinematicsResult}
+% TODO
+
+\section{PlatformGeometry}
+% TODO
+
+% ============================================================
+\chapter{Modul: vision}
+
+\section{BallDetectorRuntime}
+% TODO
+
+\section{BallTracker}
+% TODO
+
+\section{HsvRange}
+% TODO
+
+% ============================================================
+\chapter{Konfiguration}
+
+\section{config.json}
+% TODO
+
+\section{positions.json}
+% TODO
+
+% ============================================================
+\chapter{Inbetriebnahme}
+
+\section{Installation}
+% TODO
+
+\section{Kamerakalibrierung}
+% TODO
+
+\section{Kalibrierung der Servos}
+% TODO
+
+\end{document}
