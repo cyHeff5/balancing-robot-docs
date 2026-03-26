@@ -173,63 +173,45 @@
 \begin{document}
 
 % ── Titelseite (AR10-Stil) ───────────────────────────────────
-%
-%  Obere ~55 %: blauer Block
-%    – Roboterbild (Linienstil) oben links, leicht überlappend
-%    – Titel groß, unten rechts im blauen Block
-%    – Untertitel kleiner, darunter
-%
-%  Untere ~45 %: weißer Block
-%    – Dokumenttyp fett oben links
-%    – Projektname darunter
-%    – HTW-Logo unten rechts
-%
-%  Bilder ersetzen:
-%    robot_cover.png  → Foto/Render eures Roboters (beliebige Größe,
-%                        wird auf 90 mm Breite skaliert)
-%    htw_logo.png     → HTW-Berlin-Logo (transparenter Hintergrund)
-%
-\begin{titlepage}
-  \newgeometry{top=0pt, bottom=0pt, left=0pt, right=0pt, noheadfoot}
-  % Absolutes Layout in mm (A4 = 210 x 297 mm, Ursprung unten links)
-  % Trennung bei y=134mm (= 45% von unten; blauer Block oben = 163mm)
-  \noindent
-  \begin{tikzpicture}[x=1mm, y=1mm]
-    \useasboundingbox (0,0) rectangle (210,297);
+\pagestyle{empty}
+\vspace*{-\topmargin}\vspace*{-\headheight}\vspace*{-\headsep}
+\noindent\hspace*{-\oddsidemargin}\hspace*{-1in}%
+\begin{tikzpicture}[x=1mm, y=1mm]
+  \useasboundingbox (0,0) rectangle (210,297);
 
-    % Blauer oberer Block
-    \fill[htbblue] (0,134) rectangle (210,297);
+  % Blauer oberer Block
+  \fill[htbblue] (0,134) rectangle (210,297);
 
-    % Roboterbild oben links
-    \node[anchor=north west] at (8,292) {%
-      \IfFileExists{robot_cover.png}{%
-        \includegraphics[width=88mm, keepaspectratio]{robot_cover.png}%
-      }{%
-        \IfFileExists{robot_cover.jpg}{%
-          \includegraphics[width=88mm, keepaspectratio]{robot_cover.jpg}%
-        }{}%
-      }%
-    };
+  % Roboterbild oben links
+  \node[anchor=north west] at (8,292) {%
+    \IfFileExists{robot_cover.png}{%
+      \includegraphics[width=88mm, keepaspectratio]{robot_cover.png}%
+    }{%
+      \IfFileExists{robot_cover.jpg}{%
+        \includegraphics[width=88mm, keepaspectratio]{robot_cover.jpg}%
+      }{}%
+    }%
+  };
 
-    % "Balancing Robot" unten rechts im blauen Block
-    \node[anchor=south east, align=right] at (202,142) {%
-      {\fontsize{46}{42}\selectfont\bfseries\color{black}Balancing Robot}\\[3pt]
-    };
+  % "Balancing Robot" unten rechts im blauen Block
+  \node[anchor=south east, align=right] at (202,142) {%
+    {\fontsize{46}{50}\selectfont\bfseries\color{white}Balancing Robot}\\[3pt]
+  };
 
-    % "Systemdokumentation" oben links im weißen Block
-    \node[anchor=north west, align=left] at (14,126) {%
-      {\fontsize{26}{42}\selectfont\bfseries\color{black}Systemdokumentation}\\[5pt]
-      {\Large\color{htbtextgray}HTW Saar · WiSe 2025/26}%
-    };
+  % "Systemdokumentation" oben links im weißen Block
+  \node[anchor=north west, align=left] at (14,126) {%
+    {\fontsize{26}{32}\selectfont\bfseries\color{black}Systemdokumentation}\\[5pt]
+    {\Large\color{htbtextgray}HTW Saar · WiSe 2025/26}%
+  };
 
-    % HTW-Logo unten rechts
-    \node[anchor=south east] at (196,12) {%
-      \includegraphics[height=18mm, keepaspectratio]{htw_logo.png}%
-    };%
+  % HTW-Logo unten rechts
+  \node[anchor=south east] at (196,12) {%
+    \includegraphics[height=18mm, keepaspectratio]{htw_logo.png}%
+  };%
 
-  \end{tikzpicture}
-  \restoregeometry
-\end{titlepage}
+\end{tikzpicture}
+\newpage
+\pagestyle{fancy}
 
 % ── Inhaltsverzeichnis ──────────────────────────────────────
 \tableofcontents
