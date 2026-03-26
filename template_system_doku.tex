@@ -189,73 +189,45 @@
 %    htw_logo.png     → HTW-Berlin-Logo (transparenter Hintergrund)
 %
 \begin{titlepage}
-  \newgeometry{margin=0pt}   % keine Seitenränder auf der Titelseite
-  \begin{tikzpicture}[remember picture, overlay]
+  \newgeometry{top=0pt, bottom=0pt, left=0pt, right=0pt, noheadfoot}
+  % Absolutes Layout in mm (A4 = 210 x 297 mm, Ursprung unten links)
+  % Trennung bei y=134mm (= 45% von unten; blauer Block oben = 163mm)
+  \noindent
+  \begin{tikzpicture}[x=1mm, y=1mm]
+    \useasboundingbox (0,0) rectangle (210,297);
 
-    % ── Blauer oberer Block (55 % der Seite) ──────────────────
-    \fill[htbblue]
-      (current page.north west)
-      rectangle
-      ([yshift=-0.55\paperheight]current page.north east);
+    % Blauer oberer Block
+    \fill[htbblue] (0,134) rectangle (210,297);
 
-    % ── Roboterbild oben links ─────────────────────────────────
-    %   Platzhalter-Rahmen: durch \includegraphics ersetzen
-    \node[anchor=north west]
-      at ([xshift=10mm, yshift=-8mm]current page.north west)
-      {%
-        % robot_cover.png (transparenter Hintergrund) hat Vorrang vor .jpg
-        \IfFileExists{robot_cover.png}{%
-          \includegraphics[width=90mm, keepaspectratio]{robot_cover.png}%
-        }{%
-          \IfFileExists{robot_cover.jpg}{%
-            \includegraphics[width=90mm, keepaspectratio]{robot_cover.jpg}%
-          }{%
-            \begin{tikzpicture}
-              \draw[white, dashed, line width=1pt, opacity=0.4]
-                (0,0) rectangle (90mm, 110mm);
-              \node[white, opacity=0.5, font=\small] at (45mm,55mm)
-                {robot\_cover.png/.jpg};
-            \end{tikzpicture}%
-          }%
-        }%
-      };
+    % Roboterbild oben links
+    \node[anchor=north west] at (8,292) {%
+      \IfFileExists{robot_cover.png}{%
+        \includegraphics[width=88mm, keepaspectratio]{robot_cover.png}%
+      }{%
+        \IfFileExists{robot_cover.jpg}{%
+          \includegraphics[width=88mm, keepaspectratio]{robot_cover.jpg}%
+        }{}%
+      }%
+    };
 
-    % ── Titel unten rechts im blauen Block ────────────────────
-    \node[anchor=south east, align=right]
-      at ([xshift=-14mm, yshift=12mm]current page.north east |-
-          [yshift=-0.55\paperheight]current page.north)
-      {%
-        {\fontsize{36}{40}\selectfont\bfseries\color{white}Balancing Robot}\\[4pt]
-        {\large\bfseries\color{white!85!htbblue}Systemdokumentation}%
-      };
+    % "Balancing Robot" unten rechts im blauen Block
+    \node[anchor=south east, align=right] at (202,142) {%
+      {\fontsize{36}{42}\selectfont\bfseries\color{white}Balancing Robot}\\[3pt]
+      {\large\bfseries\color{white}Systemdokumentation}%
+    };
 
-    % ── Weißer unterer Block ──────────────────────────────────
-    % (Hintergrund ist bereits weiß; nur Texte positionieren)
-
-    % Dokumenttyp + Projektname
-    \node[anchor=north west, align=left]
-      at ([xshift=14mm, yshift=-10mm]current page.south west |-
-          [yshift=-0.55\paperheight]current page.north)
-      {%
-        {\large\bfseries\color{black}Systemdokumentation}\\[4pt]
-        {\normalsize\color{htbtextgray}Balancing Robot · HTW Berlin · WiSe 2025/26}%
-      };
+    % "Systemdokumentation" oben links im weißen Block
+    \node[anchor=north west, align=left] at (14,126) {%
+      {\large\bfseries\color{black}Systemdokumentation}\\[5pt]
+      {\normalsize\color{htbtextgray}Balancing Robot · HTW Berlin · WiSe 2025/26}%
+    };
 
     % HTW-Logo unten rechts
-    \node[anchor=south east]
-      at ([xshift=-14mm, yshift=14mm]current page.south east)
-      {%
-        \IfFileExists{htw_logo.png}{%
-          \includegraphics[height=18mm, keepaspectratio]{htw_logo.png}%
-        }{%
-          \begin{tikzpicture}
-            \draw[htbblue, dashed, line width=0.8pt, opacity=0.5]
-              (0,0) rectangle (40mm,16mm);
-            \node[htbblue, opacity=0.6, font=\small] at (20mm,8mm)
-              {htw\_logo.png};
-          \end{tikzpicture}%
-        }%
-      };
+    \IfFileExists{htw_logo.png}{%
+      \node[anchor=south east] at (196,12) {%
+        \includegraphics[height=18mm, keepaspectratio]{htw_logo.png}%
+      };%
+    }{}%
 
   \end{tikzpicture}
   \restoregeometry
