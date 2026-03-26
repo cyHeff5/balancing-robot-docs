@@ -203,18 +203,17 @@ des Balls haben, und daraus den Mittelpunkt zu berechnen.
 \subsection{Warum HSV statt RGB?}
 
 Farben werden in Kameras normalerweise als RGB-Werte gespeichert, also als
-Kombination aus Rot, Grün und Blau. Das klingt erstmal naheliegend, hat aber
-einen entscheidenden Nachteil: Die RGB-Werte einer Farbe verändern sich stark,
-sobald sich die Beleuchtung ändert. Ein orangefarbener Ball sieht bei
-Tageslicht und bei Kunstlicht in RGB sehr unterschiedlich aus. Damit wäre
-ein stabiler Farbfilter kaum realisierbar.
+Kombination aus Rot, Grün und Blau. Das Problem dabei ist, dass sich diese
+Werte stark verändern, sobald sich die Beleuchtung ändert. Ein orangefarbener
+Ball sieht bei Tageslicht und bei Kunstlicht in RGB sehr unterschiedlich aus,
+was einen stabilen Farbfilter schwer umsetzbar macht.
 
 Der HSV-Farbraum (Hue, Saturation, Value, also Farbton, Sättigung und
-Helligkeit) löst dieses Problem, indem er diese Eigenschaften voneinander
-trennt. Der Farbton bleibt dabei weitgehend unabhängig von der Beleuchtung.
-Wenn wir also nach einem orangefarbenen Ball suchen, reicht es im HSV-Raum
-einen Bereich im Farbton zu definieren, und der Filter funktioniert auch
-bei wechselnden Lichtverhältnissen zuverlässig.
+Helligkeit) trennt diese Eigenschaften voneinander. Der Farbton bleibt
+dabei weitgehend unabhängig von der Beleuchtung. Wenn wir nach einem
+orangefarbenen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
+zu definieren, und der Filter funktioniert auch bei wechselnden
+Lichtverhältnissen zuverlässig.
 
 % Grafik: Gegenüberstellung RGB vs HSV Farbraum, visuell
 \begin{figure}[h]
