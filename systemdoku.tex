@@ -197,9 +197,8 @@ bei unter 1 Pixel, was für unsere Anwendung ausreichend genau ist.
 
 In unserem System muss der Ball in Echtzeit im Kamerabild gefunden werden.
 Wir haben uns dafür für eine farbbasierte Methode entschieden, weil sie
-schnell genug ist und zuverlässig funktioniert. Der Grundgedanke ist einfach:
-Wir suchen im Bild nach allen Pixeln, die die Farbe des Balls haben,
-und berechnen dann den Mittelpunkt dieser Fläche.
+schnell genug ist und zuverlässig funktioniert. Die Idee dahinter ist, im Bild alle Pixel zu suchen, die die Farbe
+des Balls haben, und daraus den Mittelpunkt zu berechnen.
 
 \subsection{Warum HSV statt RGB?}
 
