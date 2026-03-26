@@ -195,12 +195,11 @@ bei unter 1 Pixel, was für unsere Anwendung ausreichend genau ist.
 
 \section{Ballerkennung}
 
-Nachdem die Kamera kalibriert ist, geht es darum, den Ball im Bild zu finden.
-Es gibt verschiedene Ansätze dafür, zum Beispiel maschinelles Lernen oder
-Kantenerkennung. Wir haben uns für eine farbbasierte Methode entschieden,
-weil sie für unseren Anwendungsfall einfach, schnell und gut nachvollziehbar
-ist. Der Grundgedanke ist folgender: Wir suchen im Bild nach allen Pixeln,
-die die Farbe des Balls haben, und berechnen dann den Mittelpunkt dieser Fläche.
+In unserem System muss der Ball in Echtzeit im Kamerabild gefunden werden.
+Wir haben uns dafür für eine farbbasierte Methode entschieden, weil sie
+schnell genug ist und zuverlässig funktioniert. Der Grundgedanke ist einfach:
+Wir suchen im Bild nach allen Pixeln, die die Farbe des Balls haben,
+und berechnen dann den Mittelpunkt dieser Fläche.
 
 \subsection{Warum HSV statt RGB?}
 
