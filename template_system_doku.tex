@@ -105,16 +105,7 @@
       left=6mm, right=6mm, top=4mm, bottom=4mm,
       width=\textwidth,
     ]
-      \color{white}%
-      \ifnum\value{chapter}>0
-        \raisebox{0pt}[\height][0pt]{%
-          \makebox[0pt][r]{%
-            \fontsize{60}{60}\selectfont\color{white!30!htbblue}%
-            \thechapter\hspace{4mm}%
-          }%
-        }%
-      \fi
-      #1
+      \color{white}#1
     \end{tcolorbox}%
   }
 \titlespacing*{\chapter}{0pt}{-20pt}{20pt}
