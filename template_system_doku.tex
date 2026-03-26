@@ -106,12 +106,14 @@
       width=\textwidth,
     ]
       \color{white}%
-      \raisebox{0pt}[\height][0pt]{%
-        \makebox[0pt][r]{%
-          \fontsize{60}{60}\selectfont\color{white!30!htbblue}%
-          \thechapter\hspace{4mm}%
+      \ifnum\value{chapter}>0
+        \raisebox{0pt}[\height][0pt]{%
+          \makebox[0pt][r]{%
+            \fontsize{60}{60}\selectfont\color{white!30!htbblue}%
+            \thechapter\hspace{4mm}%
+          }%
         }%
-      }%
+      \fi
       #1
     \end{tcolorbox}%
   }
