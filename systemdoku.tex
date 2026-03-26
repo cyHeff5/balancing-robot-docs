@@ -293,10 +293,9 @@ zugreifen können, ohne sich gegenseitig zu stören, wird der Zugriff
 \section{ROI-Tracking}
 
 Statt in jedem Bild das gesamte Kamerabild nach dem Ball zu durchsuchen,
-nutzen wir ROI-Tracking (Region of Interest). Die Idee dahinter ist einfach.
-Wenn wir wissen, wo der Ball im letzten Bild war, muss er im nächsten Bild
-ungefähr am gleichen Ort sein. Wir suchen also nur noch in einem kleinen
-Ausschnitt rund um die letzte bekannte Position.
+nutzen wir ROI-Tracking (Region of Interest). Da der Ball sich zwischen zwei Frames nur minimal bewegt, muss er im
+nächsten Bild ungefähr am gleichen Ort sein wie im vorherigen. Wir suchen
+deshalb nur noch in einem kleinen Ausschnitt rund um die letzte bekannte Position.
 
 Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
 Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
