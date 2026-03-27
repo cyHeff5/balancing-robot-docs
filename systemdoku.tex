@@ -204,7 +204,7 @@ des Balls haben, und daraus den Mittelpunkt zu berechnen.
 
 Farben werden in Kameras normalerweise als RGB-Werte gespeichert, also als
 Kombination aus Rot, Grün und Blau. Das Problem dabei ist, dass sich diese
-Werte stark verändern, sobald sich die Beleuchtung ändert. Ein orangefarbener
+Werte stark verändern, sobald sich die Beleuchtung ändert. Ein blauer
 Ball sieht bei Tageslicht und bei Kunstlicht in RGB sehr unterschiedlich aus,
 was einen stabilen Farbfilter schwer umsetzbar macht.
 
@@ -285,9 +285,11 @@ immer den neuesten Stand, egal wann er fragt.
   Speicherplatz auf das jeweils aktuellste Bild zu}
 \end{figure}
 
-Damit beide Threads sicher gleichzeitig auf denselben Speicherplatz
-zugreifen können, ohne sich gegenseitig zu stören, wird der Zugriff
-über ein Lock abgesichert.
+Damit beide Threads nicht gleichzeitig auf denselben Speicherplatz
+zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock funktioniert
+wie ein Schlüssel: Wer ihn hält, darf schreiben oder lesen, der andere
+wartet. So kann es nicht passieren, dass der Regler ein halb-überschriebenes
+Bild liest, während der Kamera-Thread gerade schreibt.
 
 
 \section{ROI-Tracking}
@@ -302,21 +304,32 @@ Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
 (zum Beispiel weil er sich zu schnell bewegt hat), wird automatisch wieder
 das gesamte Bild durchsucht und ein neuer Suchbereich festgelegt.
 
-Das Koordinatensystem hat seinen Ursprung in der Bildmitte. Positive
-$x$-Richtung zeigt nach rechts, positive $y$-Richtung nach unten.
-Alle Positionswerte werden in Pixeln angegeben, relativ zu diesem Mittelpunkt.
-
-% Grafik: Skizze Koordinatensystem auf Kamerabild mit Ball und ROI-Fenster
+% Grafik: Skizze ROI-Fenster auf Kamerabild
 \begin{figure}[h]
   \centering
   \fbox{\parbox{0.5\textwidth}{\centering\vspace{20mm}
-    [Kamerabild mit eingezeichnetem Koordinatensystem und ROI-Fenster um den Ball]
+    [Kamerabild mit eingezeichnetem ROI-Fenster um den Ball]
   \vspace{20mm}}}
-  \caption{Koordinatensystem (Ursprung Bildmitte) und ROI-Suchfenster}
+  \caption{ROI-Suchfenster rund um die letzte bekannte Ballposition}
 \end{figure}
 
 
 \section{Geschwindigkeitsschätzung}
+
+Alle Positionswerte, die die CV-Komponente ausgibt, beziehen sich auf ein
+einheitliches Koordinatensystem mit dem Ursprung in der Bildmitte. Positive
+$x$-Richtung zeigt nach rechts, positive $y$-Richtung nach unten.
+Die Werte werden in Pixeln angegeben.
+
+% Grafik: Koordinatensystem auf Kamerabild
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.5\textwidth}{\centering\vspace{20mm}
+    [Kamerabild mit eingezeichnetem Koordinatensystem, Ursprung in der Bildmitte]
+  \vspace{20mm}}}
+  \caption{Koordinatensystem der CV-Komponente, Ursprung in der Bildmitte}
+\end{figure}
+
 
 Die Ballposition allein reicht für den Regler nicht aus. Ein PD-Regler
 braucht auch die Geschwindigkeit des Balls, um nicht nur auf die aktuelle
