@@ -118,9 +118,10 @@ muss lediglich \texttt{set\_tilt(winkel\_x, winkel\_y)} aufrufen und
 bekommt keine Details darüber, wie die Winkel berechnet oder wie die
 Servos angesteuert werden.
 
-Intern delegiert \texttt{Platform} die Winkelberechnung an die
-\texttt{KinematicsEngine} und die Servo-Ansteuerung an den jeweiligen
-\texttt{ServoDriver}. Diese beiden Komponenten wissen nichts voneinander.
+Intern ruft \texttt{Platform} für die Winkelberechnung die
+\texttt{KinematicsEngine} auf und gibt die berechneten Winkel anschließend
+an den \texttt{ServoDriver} weiter. \texttt{KinematicsEngine} und
+\texttt{ServoDriver} haben dabei keine direkte Verbindung zueinander.
 
 Das Modul \texttt{vision} steht dabei parallel zu \texttt{Platform} und
 ist genauso entkoppelt. Es liefert dem Regler die Ballposition und
