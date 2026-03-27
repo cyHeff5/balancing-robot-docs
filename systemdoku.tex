@@ -357,8 +357,8 @@ Die eigentliche Erkennung läuft in mehreren Schritten ab:
   \item \textbf{Farbmaske:} Alle Pixel, deren HSV-Wert im definierten Farbbereich
         des Balls liegt, werden als weiß markiert; der Rest wird schwarz.
   \item \textbf{Rauschunterdrückung:} Ein Median-Filter glättet kleine Ausreißer,
-        anschließend werden kleine isolierte Flecken durch morphologische
-        Operationen entfernt.
+        anschließend werden kleine isolierte Flecken durch morphologisches
+        Opening und Closing entfernt~\cite{opencv_morphology}.
   \item \textbf{Größte Fläche:} Aus allen verbleibenden weißen Bereichen wird der
         größte ausgewählt. Das ist der Ball.
   \item \textbf{Kreisanpassung:} Um den gefundenen Bereich wird der kleinstmögliche
@@ -519,6 +519,11 @@ dem ROI-Tracking.
 OpenCV Documentation.
 \textit{Camera Calibration}.
 \url{https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html}
+
+\bibitem{opencv_morphology}
+OpenCV Documentation.
+\textit{Morphological Transformations}.
+\url{https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html}
 
 \bibitem{intrinsic_parameters}
 ShadeCoder.
