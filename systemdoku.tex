@@ -270,7 +270,7 @@ anschließend rechnerisch entzerren.
 \end{figure}
 
 Zur Kalibrierung haben wir die klassische Schachbrettmethode verwendet,
-die auch in der OpenCV-Bibliothek implementiert ist. Die Idee dabei ist,
+die auch in der OpenCV-Bibliothek implementiert ist~\cite{opencv_calibration}. Die Idee dabei ist,
 ein Schachbrettmuster aus mehreren verschiedenen Blickwinkeln zu
 fotografieren. Da OpenCV die Ecken des Musters automatisch erkennt,
 kann es daraus berechnen, wie die Kamera das Bild verzerrt.
@@ -512,5 +512,14 @@ dem ROI-Tracking.
 
 \section{Regelloop}
 % TODO
+
+\begin{thebibliography}{9}
+
+\bibitem{opencv_calibration}
+OpenCV Documentation.
+\textit{Camera Calibration}.
+\url{https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html}
+
+\end{thebibliography}
 
 \end{document}
