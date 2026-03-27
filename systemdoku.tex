@@ -440,10 +440,8 @@ Die Werte werden in Pixeln angegeben.
 \end{figure}
 
 
-Die Ballposition allein reicht für den Regler nicht aus. Ein PD-Regler
-braucht auch die Geschwindigkeit des Balls, um nicht nur auf die aktuelle
-Position zu reagieren, sondern auch auf die Bewegungsrichtung. Nur so
-lässt sich verhindern, dass der Ball über die Mitte hinausschießt.
+Neben der Position wird auch die Geschwindigkeit des Balls berechnet
+und an den Regler weitergegeben.
 
 Wir berechnen die Geschwindigkeit aus zwei aufeinanderfolgenden Messungen,
 indem wir die Positionsänderung durch die vergangene Zeit teilen.
