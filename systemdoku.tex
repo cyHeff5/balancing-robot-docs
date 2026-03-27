@@ -122,15 +122,29 @@ Intern delegiert \texttt{Platform} die Winkelberechnung an die
 \texttt{KinematicsEngine} und die Servo-Ansteuerung an den jeweiligen
 \texttt{ServoDriver}. Diese beiden Komponenten wissen nichts voneinander.
 
+Das Modul \texttt{vision} steht dabei parallel zu \texttt{Platform} und
+ist genauso entkoppelt. Es liefert dem Regler die Ballposition und
+Geschwindigkeit, weiß aber nichts über Servos oder Kinematik. Der Regler
+selbst ist also der einzige Punkt im System, der sowohl mit \texttt{vision}
+als auch mit \texttt{Platform} kommuniziert.
+
 % Grafik: Schichtendiagramm
 \begin{figure}[h]
   \centering
-  \fbox{\parbox{0.6\textwidth}{\centering\vspace{15mm}
-    [Schichtendiagramm: Regler $\rightarrow$ Platform $\rightarrow$
-    KinematicsEngine / ServoDriver $\rightarrow$ Hardware]
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{15mm}
+    [Schichtendiagramm: Vision / Platform $\rightarrow$ Regler $\rightarrow$ Platform
+    $\rightarrow$ KinematicsEngine / ServoDriver $\rightarrow$ Hardware]
   \vspace{15mm}}}
   \caption{Schichtenarchitektur der Software}
 \end{figure}
+
+Im laufenden Betrieb läuft \texttt{main\_control.py} in einer festen
+Regelschleife mit 30\,Hz. Pro Durchlauf liest der Regler den aktuellen
+Ballzustand aus dem \texttt{BallTracker}, berechnet die gewünschten
+Kippwinkel und übergibt sie an \texttt{Platform}. Wenn kein Ball erkannt
+wird, fährt die Plattform in die Neutralstellung. Die Bildverarbeitung
+läuft dabei in einem eigenen Thread, sodass die Regelschleife nicht
+auf ein neues Kamerabild warten muss.
 
 \section{Hardware-Abstraktion}
 
@@ -151,6 +165,22 @@ Um das System auf dem Laptop zu testen, reicht es in \texttt{main\_control.py}
 den \texttt{PCA9685Driver} durch den \texttt{MockServoDriver} zu ersetzen.
 Der Rest des Codes bleibt unverändert, weil \texttt{Platform} nur gegen
 das abstrakte Interface arbeitet und nicht gegen eine konkrete Implementierung.
+
+\section{Maschinendaten und Konfiguration}
+
+Alle geometrischen Maschinendaten des Roboters, also Plattenradius,
+Schwingenlängen und Standardhöhe, sind in der Klasse \texttt{PlatformGeometry}
+im Modul \texttt{kinematik} zusammengefasst. Die Klasse hat für alle
+Parameter Standardwerte, die dem realen Aufbau entsprechen. So muss
+beim Start nichts manuell übergeben werden, und es gibt eine einzige
+Stelle im Code, an der diese Werte bei Bedarf angepasst werden.
+
+Kalibrierungswerte, die sich je nach Aufbau oder Montage unterscheiden
+können, sind davon getrennt in \texttt{ServoConfig} im Modul \texttt{hardware}
+gespeichert. Dazu gehören die mechanischen Offsets der einzelnen Servos
+sowie ein Multiplikator zur Invertierung der Drehrichtung. Diese Werte
+können auch aus einer externen Konfigurationsdatei (\texttt{config.json})
+geladen werden, sodass sie ohne Codeänderung angepasst werden können.
 
 % ============================================================
 \chapter{Mechanische Konstruktion}
