@@ -151,8 +151,10 @@ auf ein neues Kamerabild warten muss.
 
 Der Pi-spezifische Code ist vollständig im Modul \texttt{hardware} gekapselt.
 Alle Servo-Treiber implementieren dasselbe abstrakte Interface
-\texttt{ServoDriver}, das drei Methoden vorschreibt: \texttt{set\_angles()},
-\texttt{neutral()} und \texttt{close()}. Solange ein Treiber dieses Interface
+\texttt{ServoDriver}, das drei Methoden vorschreibt: \texttt{set\_angles()}
+setzt die drei Servos auf die angegebenen Winkel, \texttt{neutral()} fährt
+alle Servos in die Ausgangsstellung, und \texttt{close()} wird beim Beenden
+aufgerufen und gibt Ressourcen frei. Solange ein Treiber dieses Interface
 erfüllt, kann er ohne Änderungen am restlichen Code eingesetzt werden.
 
 Es gibt zwei konkrete Implementierungen. Der \texttt{PCA9685Driver} spricht
