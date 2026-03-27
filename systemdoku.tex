@@ -286,10 +286,10 @@ immer den neuesten Stand, egal wann er fragt.
 \end{figure}
 
 Damit beide Threads nicht gleichzeitig auf denselben Speicherplatz
-zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock funktioniert
-wie ein Schlüssel: Wer ihn hält, darf schreiben oder lesen, der andere
-wartet. So kann es nicht passieren, dass der Regler ein halb-überschriebenes
-Bild liest, während der Kamera-Thread gerade schreibt.
+zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock stellt sicher,
+dass immer nur ein Thread gleichzeitig lesen oder schreiben darf. So kann es
+nicht passieren, dass der Regler ein halb-überschriebenes Bild liest,
+während der Kamera-Thread gerade schreibt.
 
 
 \section{ROI-Tracking}
