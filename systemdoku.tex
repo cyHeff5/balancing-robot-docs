@@ -318,14 +318,13 @@ Ball sieht bei Tageslicht und bei Kunstlicht in RGB sehr unterschiedlich aus,
 was einen stabilen Farbfilter schwer umsetzbar macht.
 
 Der HSV-Farbraum (Hue, Saturation, Value, also Farbton, Sättigung und
-Helligkeit) trennt diese Eigenschaften voneinander. Der Farbton bleibt
+Helligkeit) trennt diese Eigenschaften voneinander~\cite{opencv_colorspaces}. Der Farbton bleibt
 dabei weitgehend unabhängig von der Beleuchtung. Wenn wir nach einem
 blauen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
 zu definieren, und der Filter funktioniert auch bei wechselnden
 Lichtverhältnissen zuverlässig. Da wir einen blauen Ball verwenden,
 haben wir die HSV-Grenzwerte anhand typischer Standardwerte für Blau
 gewählt und für unsere Lichtverhältnisse leicht angepasst.
-% TODO: Quelle für HSV-Standardwerte ergänzen
 
 % Grafik: Gegenüberstellung RGB vs HSV Farbraum, visuell
 \begin{figure}[h]
@@ -517,6 +516,11 @@ am ROI-Tracking, erneut ausgeführt werden.
 OpenCV Documentation.
 \textit{Camera Calibration}.
 \url{https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html}
+
+\bibitem{opencv_colorspaces}
+OpenCV Documentation.
+\textit{Changing Colorspaces}.
+\url{https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html}
 
 \bibitem{opencv_morphology}
 OpenCV Documentation.
