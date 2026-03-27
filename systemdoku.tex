@@ -77,6 +77,82 @@
 % TODO
 
 % ============================================================
+\chapter{Softwarearchitektur}
+
+Die Software des Balancing Robots ist in mehrere voneinander unabhängige
+Module aufgeteilt. Das zentrale Ziel dieser Aufteilung ist, dass jede
+Komponente einzeln entwickelt, getestet und ausgetauscht werden kann,
+ohne dass dabei andere Teile des Systems angepasst werden müssen.
+Ein konkreter Vorteil davon ist, dass der Großteil des Codes auf einem
+gewöhnlichen Laptop ausgeführt und getestet werden kann, ohne Zugriff
+auf den Raspberry Pi oder die angeschlossene Hardware zu haben.
+
+\section{Modulübersicht}
+
+Das Projekt gliedert sich in folgende Module:
+
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  Modul & Aufgabe \\
+  \midrule
+  \texttt{balancing\_platform} & Verbindet Kinematik und Hardware, einzige Schnittstelle für den Regler \\
+  \texttt{kinematik}           & Berechnet aus gewünschten Kippwinkeln die nötigen Servowinkel \\
+  \texttt{hardware}            & Steuert die Servos an, enthält Pi-spezifischen Code \\
+  \texttt{vision}              & Erkennt den Ball im Kamerabild und schätzt Position und Geschwindigkeit \\
+  \texttt{control}             & Enthält den PD-Regler \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+Der Einstiegspunkt für den laufenden Betrieb ist \texttt{main\_control.py}.
+Dort werden alle Komponenten instanziiert und der Regelloop gestartet.
+
+\section{Schichtenarchitektur}
+
+Die Module sind in einer klaren Hierarchie angeordnet. Der Regler steht
+ganz oben und kommuniziert ausschließlich mit der \texttt{Platform}-Klasse
+aus dem Modul \texttt{balancing\_platform}. Diese Klasse ist der einzige
+Berührungspunkt zwischen Regelung und dem Rest des Systems. Der Regler
+muss lediglich \texttt{set\_tilt(winkel\_x, winkel\_y)} aufrufen und
+bekommt keine Details darüber, wie die Winkel berechnet oder wie die
+Servos angesteuert werden.
+
+Intern delegiert \texttt{Platform} die Winkelberechnung an die
+\texttt{KinematicsEngine} und die Servo-Ansteuerung an den jeweiligen
+\texttt{ServoDriver}. Diese beiden Komponenten wissen nichts voneinander.
+
+% Grafik: Schichtendiagramm
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.6\textwidth}{\centering\vspace{15mm}
+    [Schichtendiagramm: Regler $\rightarrow$ Platform $\rightarrow$
+    KinematicsEngine / ServoDriver $\rightarrow$ Hardware]
+  \vspace{15mm}}}
+  \caption{Schichtenarchitektur der Software}
+\end{figure}
+
+\section{Hardware-Abstraktion}
+
+Der Pi-spezifische Code ist vollständig im Modul \texttt{hardware} gekapselt.
+Alle Servo-Treiber implementieren dasselbe abstrakte Interface
+\texttt{ServoDriver}, das drei Methoden vorschreibt: \texttt{set\_angles()},
+\texttt{neutral()} und \texttt{close()}. Solange ein Treiber dieses Interface
+erfüllt, kann er ohne Änderungen am restlichen Code eingesetzt werden.
+
+Es gibt zwei konkrete Implementierungen. Der \texttt{PCA9685Driver} spricht
+über den I\textsuperscript{2}C-Bus mit dem PCA9685-Servo-Controller und
+wird auf dem Raspberry Pi verwendet. Er importiert \texttt{adafruit\_servokit},
+eine Bibliothek die nur auf dem Pi verfügbar ist. Der \texttt{MockServoDriver}
+hingegen enthält keinen Hardware-Import und gibt die berechneten Winkel
+lediglich auf der Konsole aus. Er kann auf jedem Rechner ausgeführt werden.
+
+Um das System auf dem Laptop zu testen, reicht es in \texttt{main\_control.py}
+den \texttt{PCA9685Driver} durch den \texttt{MockServoDriver} zu ersetzen.
+Der Rest des Codes bleibt unverändert, weil \texttt{Platform} nur gegen
+das abstrakte Interface arbeitet und nicht gegen eine konkrete Implementierung.
+
+% ============================================================
 \chapter{Mechanische Konstruktion}
 
 \section{Gesamtaufbau und Designentscheidungen}
