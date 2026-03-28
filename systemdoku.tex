@@ -110,8 +110,7 @@ Dort werden alle Komponenten instanziiert und der Regelloop gestartet.
 
 \section{Schichtenarchitektur}
 
-Die Module sind in einer klaren Hierarchie angeordnet. Der Regler steht
-ganz oben und kommuniziert ausschließlich mit der \texttt{Platform}-Klasse
+Der Regler kommuniziert ausschließlich mit der \texttt{Platform}-Klasse
 aus dem Modul \texttt{balancing\_platform}. Diese Klasse ist der einzige
 Berührungspunkt zwischen Regelung und dem Rest des Systems. Der Regler
 muss lediglich \texttt{set\_tilt(winkel\_x, winkel\_y)} aufrufen und
