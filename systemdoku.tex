@@ -127,16 +127,14 @@ Das Modul \texttt{vision} steht dabei parallel zu \texttt{Platform} und
 ist genauso entkoppelt. Es liefert dem Regler die Ballposition und
 Geschwindigkeit, weiß aber nichts über Servos oder Kinematik. Der Regler
 selbst ist also der einzige Punkt im System, der sowohl mit \texttt{vision}
-als auch mit \texttt{Platform} kommuniziert.
+als auch mit \texttt{Platform} kommuniziert. Abbildung~\ref{fig:komponenten}
+zeigt den vollständigen Aufbau mit allen Komponenten und ihren Verbindungen.
 
-% Grafik: Schichtendiagramm
 \begin{figure}[h]
   \centering
-  \fbox{\parbox{0.7\textwidth}{\centering\vspace{15mm}
-    [Komponentendiagramm: Vision / Platform $\rightarrow$ Regler $\rightarrow$ Platform
-    $\rightarrow$ KinematicsEngine / ServoDriver $\rightarrow$ Hardware]
-  \vspace{15mm}}}
+  \includegraphics[width=\textwidth]{Komponenten.png}
   \caption{Komponentendiagramm der Softwarearchitektur}
+  \label{fig:komponenten}
 \end{figure}
 
 Im laufenden Betrieb läuft \texttt{main\_control.py} in einer festen
