@@ -12,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{helvet}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage{hyperref}
@@ -81,75 +82,603 @@
 \chapter{Schnellstart}
 
 \section{Voraussetzungen}
-% TODO
+
+Für den Betrieb auf dem Laptop werden folgende Python-Pakete benötigt:
+
+\begin{itemize}
+  \item \texttt{numpy}
+  \item \texttt{opencv-python}
+  \item \texttt{flask}
+\end{itemize}
+
+Auf dem Raspberry Pi kommen zusätzlich hinzu:
+
+\begin{itemize}
+  \item \texttt{picamera2}
+  \item \texttt{adafruit-circuitpython-servokit}
+\end{itemize}
 
 \section{Laptop-Test ohne Hardware}
-% TODO
+
+Das Demo-Script lässt sich ohne Kamera und ohne angeschlossene Servos starten:
+
+\begin{lstlisting}
+python -m tools.demo --mock --no-camera
+\end{lstlisting}
+
+Die Weboberfläche ist danach unter \texttt{http://localhost:5000} erreichbar.
+Mit den Pfeiltasten lässt sich die Plattform virtuell kippen.
 
 \section{Start auf dem Raspberry Pi}
-% TODO
+
+Mit angeschlossener Kamera und PCA9685-Board:
+
+\begin{lstlisting}
+python -m tools.demo
+\end{lstlisting}
+
+Für den vollständigen Regelkreis ohne Weboberfläche:
+
+\begin{lstlisting}
+python main_control.py
+\end{lstlisting}
 
 % ============================================================
 \chapter{Modul: balancing\_platform}
 
 \section{Klasse Platform}
-% TODO
 
-\section{Methoden}
-% TODO
+\texttt{Platform} ist die zentrale Klasse zur Steuerung der Plattform.
+Sie verbindet die Kinematik-Berechnung mit dem Servo-Treiber und ist
+der einzige Berührungspunkt für den Regelkreis.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+Platform(driver, geometry=None, solver_method="scipy")
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{driver} & \texttt{ServoDriver} & – & Servo-Treiber-Instanz (\texttt{PCA9685Driver} oder \texttt{MockServoDriver}) \\
+  \texttt{geometry} & \texttt{PlatformGeometry | None} & \texttt{None} & Geometrieparameter der Plattform; bei \texttt{None} werden die Standardwerte verwendet \\
+  \texttt{solver\_method} & \texttt{str} & \texttt{"scipy"} & Lösungsverfahren für die inverse Kinematik; \texttt{"scipy"} ist robuster, \texttt{"newton"} ist schneller \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Methoden}
+
+\begin{tabularx}{\textwidth}{l X}
+  \toprule
+  Methode & Beschreibung \\
+  \midrule
+  \texttt{set\_tilt(winkel\_x, winkel\_y)} & Kippt die Plattform um den angegebenen Winkel in X- und Y-Richtung (in Grad). Berechnet intern die Servowinkel und sendet sie an den Treiber. \\
+  \addlinespace
+  \texttt{neutral()} & Fährt die Plattform in die Neutralposition (0°, 0°). \\
+  \addlinespace
+  \texttt{close()} & Fährt die Plattform neutral und gibt den Treiber frei. Wird beim Verlassen eines \texttt{with}-Blocks automatisch aufgerufen. \\
+  \bottomrule
+\end{tabularx}
+
+\vspace{4mm}
+\texttt{Platform} unterstützt das Context-Manager-Protokoll. Die \texttt{close()}-Methode
+wird beim Verlassen des \texttt{with}-Blocks automatisch aufgerufen.
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+from balancing_platform import Platform
+from hardware.pca9685_driver import PCA9685Driver
+
+driver = PCA9685Driver.from_config("config.json")
+
+with Platform(driver=driver) as platform:
+    platform.neutral()
+    platform.set_tilt(winkel_x=10.0, winkel_y=-5.0)
+\end{lstlisting}
 
 % ============================================================
 \chapter{Modul: hardware}
 
+Das Modul \texttt{hardware} enthält die Treiber-Klassen für die Servos.
+Beide Treiber implementieren die abstrakte Basisklasse \texttt{ServoDriver}
+und sind damit austauschbar.
+
+\section{ServoConfig}
+
+\texttt{ServoConfig} ist ein Daten-Objekt, das die Kalibrierungsparameter
+für die drei Servos enthält.
+
+\subsection*{Felder}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Feld & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{offset\_v} & \texttt{float} & \texttt{18.0} & Montage-Offset des vorderen Servos in Grad \\
+  \texttt{offset\_l} & \texttt{float} & \texttt{35.0} & Montage-Offset des linken Servos in Grad \\
+  \texttt{offset\_r} & \texttt{float} & \texttt{17.0} & Montage-Offset des rechten Servos in Grad \\
+  \texttt{modifier} & \texttt{float} & \texttt{1.0} & Globaler Skalierungsfaktor; \texttt{-1.0} invertiert alle Servos \\
+  \texttt{pulse\_min\_us} & \texttt{int} & \texttt{500} & Minimale Pulsbreite in Mikrosekunden \\
+  \texttt{pulse\_max\_us} & \texttt{int} & \texttt{2500} & Maximale Pulsbreite in Mikrosekunden \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Klassenmethode}
+
+\begin{tabularx}{\textwidth}{l X}
+  \toprule
+  Methode & Beschreibung \\
+  \midrule
+  \texttt{ServoConfig.from\_config(path)} & Lädt die Konfiguration aus einer JSON-Datei. Der Pfad kann als \texttt{str} oder \texttt{Path} übergeben werden. \\
+  \bottomrule
+\end{tabularx}
+
 \section{MockServoDriver}
-% TODO
+
+\texttt{MockServoDriver} simuliert die Servo-Hardware ohne physisches Gerät.
+Er eignet sich zum Testen auf dem Laptop.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+MockServoDriver(verbose=True)
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{verbose} & \texttt{bool} & \texttt{True} & Gibt die gesetzten Winkel bei jedem Aufruf auf der Konsole aus \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Attribute}
+
+Nach jedem Aufruf von \texttt{set\_angles()} werden die gesetzten Winkel
+in den Attributen \texttt{last\_v}, \texttt{last\_l} und \texttt{last\_r} gespeichert.
 
 \section{PCA9685Driver}
-% TODO
+
+\texttt{PCA9685Driver} steuert die Servos über das PCA9685-Board per I\textsuperscript{2}C.
+Dieser Treiber setzt \texttt{adafruit-circuitpython-servokit} voraus
+und funktioniert nur auf dem Raspberry Pi.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+PCA9685Driver(config)
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{config} & \texttt{ServoConfig} & – & Kalibrierungsparameter für die drei Servos \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Klassenmethode}
+
+\begin{tabularx}{\textwidth}{l X}
+  \toprule
+  Methode & Beschreibung \\
+  \midrule
+  \texttt{PCA9685Driver.from\_config(path)} & Erstellt einen \texttt{PCA9685Driver} direkt aus einer JSON-Datei. Entspricht \texttt{PCA9685Driver(ServoConfig.from\_config(path))}. \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+from hardware.pca9685_driver import PCA9685Driver
+
+# Aus JSON laden (empfohlen):
+driver = PCA9685Driver.from_config("config.json")
+
+# Oder manuell konfigurieren:
+from hardware.pca9685_driver import ServoConfig
+config = ServoConfig(offset_v=20, offset_l=35, offset_r=20)
+driver = PCA9685Driver(config)
+\end{lstlisting}
 
 % ============================================================
 \chapter{Modul: kinematik}
 
-\section{KinematicsEngine}
-% TODO
-
-\section{KinematicsResult}
-% TODO
+Das Modul \texttt{kinematik} wird von \texttt{Platform} intern verwendet
+und muss in der Regel nicht direkt aufgerufen werden.
+Relevant ist lediglich \texttt{PlatformGeometry}, wenn die Standardgeometrie
+angepasst werden soll.
 
 \section{PlatformGeometry}
-% TODO
+
+\texttt{PlatformGeometry} enthält die geometrischen Abmessungen der Plattform.
+Alle Längenangaben sind in Millimetern, Winkel in Grad.
+
+\subsection*{Felder}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Feld & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{plate\_radius} & \texttt{float} & \texttt{125.0} & Radius der Plattform in mm \\
+  \texttt{standard\_height} & \texttt{float} & \texttt{165.0} & Arbeitshöhe der Plattform in mm \\
+  \texttt{upper\_arm\_length} & \texttt{float} & \texttt{179.2} & Länge des Oberarms in mm \\
+  \texttt{lower\_arm\_length} & \texttt{float} & \texttt{70.0} & Länge des Unterarms in mm \\
+  \texttt{platform\_link\_length} & \texttt{float} & \texttt{216.5} & Länge der Plattform-Verbindungsstange in mm \\
+  \texttt{delta\_angle\_deg} & \texttt{float} & \texttt{120.0} & Winkelabstand zwischen den Armen in Grad \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+from kinematik.geometry import PlatformGeometry
+from balancing_platform import Platform
+from hardware.mock_driver import MockServoDriver
+
+# Standardgeometrie verwenden:
+platform = Platform(driver=MockServoDriver())
+
+# Angepasste Geometrie:
+geo = PlatformGeometry(plate_radius=130.0, standard_height=170.0)
+platform = Platform(driver=MockServoDriver(), geometry=geo)
+\end{lstlisting}
+
+\section{KinematicsEngine}
+
+\texttt{KinematicsEngine} löst die inverse Kinematik für einen gegebenen
+Kippwinkel und gibt die drei Servowinkel zurück.
+Sie wird von \texttt{Platform} intern instanziiert und muss nicht
+direkt verwendet werden.
+
+\section{KinematicsResult}
+
+\texttt{KinematicsResult} ist das Rückgabe-Objekt von \texttt{KinematicsEngine.solve()}.
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Feld & Typ & Beschreibung \\
+  \midrule
+  \texttt{servo\_v} & \texttt{float} & Berechneter Winkel des vorderen Servos in Grad \\
+  \texttt{servo\_l} & \texttt{float} & Berechneter Winkel des linken Servos in Grad \\
+  \texttt{servo\_r} & \texttt{float} & Berechneter Winkel des rechten Servos in Grad \\
+  \texttt{actual\_angle\_x} & \texttt{float} & Tatsächlich erreichter Kippwinkel in X; kann vom Sollwert abweichen, wenn die Erreichbarkeitsgrenze aktiv war \\
+  \texttt{actual\_angle\_y} & \texttt{float} & Tatsächlich erreichter Kippwinkel in Y \\
+  \texttt{solver\_success} & \texttt{bool} & \texttt{True} wenn der Solver konvergiert ist \\
+  \texttt{reachability\_ok} & \texttt{bool} & \texttt{True} wenn kein Erreichbarkeits-Eingriff nötig war \\
+  \bottomrule
+\end{tabularx}
 
 % ============================================================
 \chapter{Modul: vision}
 
+\section{HsvRange}
+
+\texttt{HsvRange} definiert den HSV-Farbbereich für die Ballerkennung.
+
+\subsection*{Felder}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Feld & Typ & Beschreibung \\
+  \midrule
+  \texttt{lower} & \texttt{np.ndarray} (shape \texttt{(3,)}, dtype \texttt{uint8}) & Untere Grenze des HSV-Bereichs \texttt{[H, S, V]} \\
+  \texttt{upper} & \texttt{np.ndarray} (shape \texttt{(3,)}, dtype \texttt{uint8}) & Obere Grenze des HSV-Bereichs \texttt{[H, S, V]} \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+import numpy as np
+from vision.ball_detection.types import HsvRange
+
+# Blauer Ball:
+hsv_range = HsvRange(
+    lower=np.array([90,  80,  60], dtype=np.uint8),
+    upper=np.array([130, 255, 255], dtype=np.uint8),
+)
+\end{lstlisting}
+
 \section{BallDetectorRuntime}
-% TODO
+
+\texttt{BallDetectorRuntime} kapselt den Kamerazugriff und die Ballerkennung.
+Ein Hintergrund-Thread liest kontinuierlich Frames von der Kamera.
+Die Methode \texttt{read()} liefert zu jedem Zeitpunkt das Ergebnis
+der letzten Erkennung.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+BallDetectorRuntime(hsv_range, frame_size=(640, 480),
+                    input_color_order="BGR",
+                    use_roi_tracking=False,
+                    roi_size=600, roi_miss_limit=5,
+                    downsample_factor=1)
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{hsv\_range} & \texttt{HsvRange} & – & Farbbereich des Balls im HSV-Farbraum \\
+  \texttt{frame\_size} & \texttt{tuple[int, int]} & \texttt{(640, 480)} & Auflösung der Kamera in Pixeln \\
+  \texttt{input\_color\_order} & \texttt{str} & \texttt{"BGR"} & Farbkanal-Reihenfolge der Kamera; \texttt{"RGB"} für Picamera2 \\
+  \texttt{use\_roi\_tracking} & \texttt{bool} & \texttt{False} & Aktiviert ROI-Tracking für schnellere Erkennung \\
+  \texttt{roi\_size} & \texttt{int} & \texttt{600} & Kantenlänge des ROI-Fensters in Pixeln \\
+  \texttt{roi\_miss\_limit} & \texttt{int} & \texttt{5} & Anzahl aufeinanderfolgender Fehldetektionen im ROI, bevor auf das Vollbild zurückgefallen wird \\
+  \texttt{downsample\_factor} & \texttt{int} & \texttt{1} & Verkleinerungsfaktor vor der Erkennung; \texttt{2} halbiert Breite und Höhe \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Methoden}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Methode & Rückgabe & Beschreibung \\
+  \midrule
+  \texttt{start()} & – & Startet die Kamera und den Hintergrund-Thread. Muss vor dem ersten \texttt{read()} aufgerufen werden. \\
+  \addlinespace
+  \texttt{stop()} & – & Stoppt den Hintergrund-Thread und gibt die Kamera frei. \\
+  \addlinespace
+  \texttt{read()} & \texttt{BallMeasurement} & Liefert das Erkennungsergebnis für den aktuellen Frame. \\
+  \addlinespace
+  \texttt{read\_with\_frame()} & \texttt{(BallMeasurement, np.ndarray)} & Wie \texttt{read()}, gibt zusätzlich den verarbeiteten Frame als BGR-Array zurück. \\
+  \addlinespace
+  \texttt{get\_latest\_frame()} & \texttt{np.ndarray | None} & Gibt den zuletzt aufgenommenen Frame zurück, ohne eine Erkennung durchzuführen. \\
+  \addlinespace
+  \texttt{get\_last\_measurement()} & \texttt{BallMeasurement | None} & Gibt das Ergebnis der letzten abgeschlossenen Erkennung zurück, ohne einen neuen Frame zu lesen. \\
+  \bottomrule
+\end{tabularx}
+
+\section{BallMeasurement}
+
+\texttt{BallMeasurement} ist das Rückgabe-Objekt von \texttt{read()}.
+Alle Koordinaten sind relativ zur Bildmitte in Pixeln angegeben.
+Die positive X-Achse zeigt nach rechts, die positive Y-Achse nach oben.
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Feld & Typ & Beschreibung \\
+  \midrule
+  \texttt{valid} & \texttt{bool} & \texttt{True} wenn ein Ball erkannt wurde \\
+  \texttt{x\_rel\_px} & \texttt{int} & X-Position relativ zur Bildmitte in Pixeln \\
+  \texttt{y\_rel\_px} & \texttt{int} & Y-Position relativ zur Bildmitte in Pixeln \\
+  \texttt{radius\_px} & \texttt{float} & Radius des erkannten Balls in Pixeln \\
+  \texttt{area\_px} & \texttt{float} & Fläche des erkannten Blobs in Quadratpixeln \\
+  \texttt{timestamp\_s} & \texttt{float} & Zeitstempel der Messung in Sekunden (\texttt{perf\_counter}) \\
+  \bottomrule
+\end{tabularx}
 
 \section{BallTracker}
-% TODO
 
-\section{HsvRange}
-% TODO
+\texttt{BallTracker} erweitert \texttt{BallDetectorRuntime} um eine
+Geschwindigkeitsschätzung per finiter Differenz.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+BallTracker(runtime)
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{runtime} & \texttt{BallDetectorRuntime} & – & Bereits gestartete Detector-Instanz \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Methoden}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Methode & Rückgabe & Beschreibung \\
+  \midrule
+  \texttt{get()} & \texttt{BallState} & Liest den aktuellen Frame und berechnet Position sowie Geschwindigkeit. Beim ersten Aufruf oder nach einem Verlust des Balls ist \texttt{valid = False}. \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{BallState}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Feld & Typ & Beschreibung \\
+  \midrule
+  \texttt{valid} & \texttt{bool} & \texttt{True} wenn ein Ball erkannt wurde und eine Geschwindigkeit berechnet werden konnte \\
+  \texttt{x} & \texttt{float} & X-Position relativ zur Bildmitte in Pixeln \\
+  \texttt{y} & \texttt{float} & Y-Position relativ zur Bildmitte in Pixeln \\
+  \texttt{vx} & \texttt{float} & Geschwindigkeit in X-Richtung in px/s \\
+  \texttt{vy} & \texttt{float} & Geschwindigkeit in Y-Richtung in px/s \\
+  \texttt{v} & \texttt{float} & Betrag der Geschwindigkeit in px/s \\
+  \texttt{dt} & \texttt{float} & Zeitdifferenz zur vorherigen Messung in Sekunden \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+import numpy as np
+from vision.ball_detection import BallDetectorRuntime, BallTracker, HsvRange
+
+hsv_range = HsvRange(
+    lower=np.array([90,  80,  60], dtype=np.uint8),
+    upper=np.array([130, 255, 255], dtype=np.uint8),
+)
+
+detector = BallDetectorRuntime(
+    hsv_range=hsv_range,
+    frame_size=(640, 480),
+    input_color_order="RGB",
+    use_roi_tracking=True,
+)
+tracker = BallTracker(detector)
+detector.start()
+
+state = tracker.get()
+if state.valid:
+    print(state.x, state.y, state.vx, state.vy)
+
+detector.stop()
+\end{lstlisting}
+
+% ============================================================
+\chapter{Modul: control}
+
+\section{PDController}
+
+\texttt{PDController} ist ein PD-Regler mit Ableitungs-Clamp und
+Ausgangs-Sättigung. Er wird für beide Achsen (X und Y) separat instanziiert.
+
+\subsection*{Konstruktor}
+
+\begin{lstlisting}
+PDController(kp, kd, u_min, u_max, d_max_abs)
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l l X}
+  \toprule
+  Parameter & Typ & Standard & Beschreibung \\
+  \midrule
+  \texttt{kp} & \texttt{float} & – & Proportionalverstärkung \\
+  \texttt{kd} & \texttt{float} & – & Differentialverstärkung \\
+  \texttt{u\_min} & \texttt{float} & – & Untere Schranke des Ausgangs in Grad \\
+  \texttt{u\_max} & \texttt{float} & – & Obere Schranke des Ausgangs in Grad \\
+  \texttt{d\_max\_abs} & \texttt{float} & – & Maximaler Betrag der Ableitung; begrenzt Sprünge bei plötzlichen Messänderungen \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Methoden}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Methode & Rückgabe & Beschreibung \\
+  \midrule
+  \texttt{update(error, dt)} & \texttt{float} & Berechnet den Reglerausgang für den aktuellen Fehler und die Zeitdifferenz \texttt{dt} in Sekunden. Beim ersten Aufruf wird kein Differentialanteil berechnet. \\
+  \addlinespace
+  \texttt{reset()} & – & Setzt den internen Zustand zurück, sodass der nächste \texttt{update()}-Aufruf wieder wie ein erster Aufruf behandelt wird. \\
+  \bottomrule
+\end{tabularx}
+
+\subsection*{Beispiel}
+
+\begin{lstlisting}
+from control.pd_controller import PDController
+
+ctrl_x = PDController(kp=0.3, kd=0.05, u_min=-20.0, u_max=20.0, d_max_abs=500.0)
+ctrl_y = PDController(kp=0.3, kd=0.05, u_min=-20.0, u_max=20.0, d_max_abs=500.0)
+
+# Im Regelloop:
+state = tracker.get()
+if state.valid:
+    winkel_x = ctrl_x.update(error=state.x, dt=state.dt)
+    winkel_y = ctrl_y.update(error=state.y, dt=state.dt)
+    platform.set_tilt(winkel_x, winkel_y)
+else:
+    ctrl_x.reset()
+    ctrl_y.reset()
+    platform.neutral()
+\end{lstlisting}
 
 % ============================================================
 \chapter{Konfiguration}
 
 \section{config.json}
-% TODO
+
+Die Datei \texttt{config.json} enthält die Servo-Kalibrierungsparameter.
+Sie wird von \texttt{PCA9685Driver.from\_config()} und
+\texttt{ServoConfig.from\_config()} gelesen.
+
+\begin{lstlisting}[language={}]
+{
+  "offset_v": 18.0,
+  "offset_l": 35.0,
+  "offset_r": 17.0,
+  "modifier": 1.0
+}
+\end{lstlisting}
+
+Die Offsets korrigieren den mechanischen Montageversatz der Servos.
+Der \texttt{modifier} kann auf \texttt{-1.0} gesetzt werden,
+wenn alle Servos invertiert eingebaut wurden.
 
 \section{positions.json}
-% TODO
+
+Die Datei \texttt{positions.json} wird von \texttt{tools/capture\_calibration\_set.py}
+verwendet, um die Plattform während der Kamerakalibrierung automatisch in
+verschiedene Positionen zu fahren.
+
+\begin{lstlisting}[language={}]
+{
+  "positions": [
+    { "name": "center",     "roll_deg":  0.0, "pitch_deg":  0.0, "settle_s": 1.5 },
+    { "name": "tilt_left",  "roll_deg": -10.0, "pitch_deg":  0.0, "settle_s": 1.5 },
+    { "name": "tilt_right", "roll_deg":  10.0, "pitch_deg":  0.0, "settle_s": 1.5 }
+  ]
+}
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{l l X}
+  \toprule
+  Feld & Typ & Beschreibung \\
+  \midrule
+  \texttt{name} & \texttt{string} & Name der Position; wird als Teil des Dateinamens verwendet \\
+  \texttt{roll\_deg} & \texttt{float} & Kippwinkel um die X-Achse in Grad \\
+  \texttt{pitch\_deg} & \texttt{float} & Kippwinkel um die Y-Achse in Grad \\
+  \texttt{settle\_s} & \texttt{float} & Wartezeit nach dem Anfahren der Position in Sekunden \\
+  \bottomrule
+\end{tabularx}
 
 % ============================================================
 \chapter{Inbetriebnahme}
 
 \section{Installation}
-% TODO
+
+Abhängigkeiten auf dem Laptop installieren:
+
+\begin{lstlisting}[language=bash]
+pip install numpy opencv-python flask
+\end{lstlisting}
+
+Auf dem Raspberry Pi zusätzlich:
+
+\begin{lstlisting}[language=bash]
+pip install picamera2 adafruit-circuitpython-servokit
+\end{lstlisting}
 
 \section{Kamerakalibrierung}
-% TODO
+
+Zur Kalibrierung der Kamera wird ein Schachbrettmuster mit bekannter
+Feldgröße benötigt. Das Script \texttt{vision/calibration/run\_intrinsics.py}
+berechnet die intrinsischen Kameraparameter aus einem Satz von
+Kalibrierungsbildern.
+
+Bilder aufnehmen:
+
+\begin{lstlisting}[language=bash]
+python -m vision.calibration.capture_calibration_set
+\end{lstlisting}
+
+Kalibrierung berechnen:
+
+\begin{lstlisting}[language=bash]
+python -m vision.calibration.run_intrinsics
+\end{lstlisting}
+
+Die Ergebnisse werden im Ordner \texttt{vision/calibration/output/} gespeichert.
 
 \section{Kalibrierung der Servos}
-% TODO
+
+Die Servo-Offsets werden in \texttt{config.json} eingetragen.
+Zum Bestimmen der Werte wird die Plattform in die Neutralposition gefahren
+und die Offsets so angepasst, dass die Plattform horizontal steht.
+Mit dem Demo-Script lässt sich das interaktiv prüfen:
+
+\begin{lstlisting}
+python -m tools.demo --no-camera
+\end{lstlisting}
 
 \end{document}
