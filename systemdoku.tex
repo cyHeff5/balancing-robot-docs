@@ -198,11 +198,11 @@ geladen werden, sodass sie ohne Codeänderung angepasst werden können.
 \chapter{Mechanische Konstruktion}
 
 \section{Ausgangslage}
-Im Rahmen dieses Projektes war ich hauptsächlich für die Mechanische Konstruktion und den Aufbau der Baugruppe verantwortlich. Darunter fällt die CAD gestützte Konstruktion, die Auswahl mechanischer Komponenten, die Fertigung der Werkstücke und die Anpassung der Mechanik im Laufe des Projektes.
+Im Rahmen dieses Projektes wurde die mechanische Konstruktion und der Aufbau der Baugruppe bearbeitet. Darunter fällt die CAD-gestützte Konstruktion, die Auswahl mechanischer Komponenten, die Fertigung der Werkstücke und die Anpassung der Mechanik im Laufe des Projektes.
 
 In der Gruppe wurde sich zunächst auf eine Platte aus Plexiglas mit dem Durchmesser \SI{250}{\milli\metre} und einer Dicke von \SI{4}{\milli\metre} geeinigt. Damit und einem zum Field of View der Kamera passenden Mindestabstand ergab sich aus der Kinematik für die Servo Kurbel \posnr{12} ein Achsabstand von \SI{70}{\milli\metre}. Für die darüberliegende Schwinge \posnr{7}\posnr{8}\posnr{9} eine Länge von \SI{179,2}{\milli\metre}.
 
-Des Weiteren wählten wir ein Grunddesign, das die Servo Kurbel in der Nulllage parallel zur Standfläche orientiert ist. Mit einem positiven und negativen Arbeitsraum ergibt sich so eine maximale Änderung der Plattform bei eher kleineren Winkeländerungen des Servowinkels.
+Des Weiteren wurde ein Grunddesign gewählt, das die Servo Kurbel in der Nulllage parallel zur Standfläche orientiert ist. Mit einem positiven und negativen Arbeitsraum ergibt sich so eine maximale Änderung der Plattform bei eher kleineren Winkeländerungen des Servowinkels.
 
 
 
@@ -376,8 +376,7 @@ abgepuffert werden können.
 \subsection{Servo-Driver}
 
 Erste Versuche mit dem Aufbau zeigten, dass die Software-PWM-Ausgänge am Raspberry Pi nicht
-geeignet für die angestrebte Verwendung waren. Deshalb haben wir uns für die Verwendung eines
-externen PWM-Drivers entschieden. Dieser kann bis zu 16 Kanäle mit Hardware-PWM bereitstellen.
+geeignet für die angestrebte Verwendung waren. Deshalb wurde ein externer PWM-Driver verwendet. Dieser kann bis zu 16 Kanäle mit Hardware-PWM bereitstellen.
 
 \section{Gehäuseentwicklung}
 
@@ -659,8 +658,7 @@ Hardware erzeugen. Zumindest das dritte PWM-Signal müsste softwareseitig modell
 Tests haben jedoch festgestellt, dass dieses Signal nicht konstant ist und die Servos zu vibrieren
 beginnen. Deshalb werden alle drei Servos mit Hilfe eines zusätzlichen Boards per Hardware-PWM betrieben.
 
-In der Funktion \texttt{PCA9685Driver} übernimmt die Ansteuerung der Servos, welche durch Mitarbeit von Leon
-Weyand erstellt und optimiert wurde. Dieser Funktion wird der gewünschte Stellwinkel
+Die Klasse \texttt{PCA9685Driver} übernimmt die Ansteuerung der Servos. Dieser Funktion wird der gewünschte Stellwinkel
 übergeben, der dann dort zunächst mit einem Modifier multipliziert wird. Dieser Modifier ist ein
 Wert, der für jeden Servo bestimmt wurde, um z.\,B. die Drehrichtung anzupassen, oder mit
 einem Gain die Drehung bei gegebenem Winkel etwas zu spreizen. Anschließend wird dieser
@@ -711,7 +709,7 @@ anschließend rechnerisch entzerren.
   \caption{Kamerabild vor (links) und nach (rechts) der Entzerrung~\cite{hshl_kalibrierung}}
 \end{figure}
 
-Zur Kalibrierung haben wir die klassische Schachbrettmethode verwendet,
+Zur Kalibrierung wurde die klassische Schachbrettmethode verwendet,
 die auch in der OpenCV-Bibliothek implementiert ist~\cite{opencv_calibration}. Die Idee dabei ist,
 ein Schachbrettmuster aus mehreren verschiedenen Blickwinkeln zu
 fotografieren. Da OpenCV die Ecken des Musters automatisch erkennt,
@@ -719,11 +717,11 @@ kann es daraus berechnen, wie die Kamera das Bild verzerrt.
 
 Wichtig ist dabei, möglichst viele verschiedene Perspektiven abzudecken,
 damit die Kalibrierung auch an den Bildrändern zuverlässig ist. Um das
-ohne viel manuellen Aufwand zu erreichen, haben wir den Aufnahmeprozess
+ohne viel manuellen Aufwand zu erreichen, wurde der Aufnahmeprozess
 direkt mit der Plattform automatisiert. Die Plattform kippt nacheinander
 in sieben verschiedene Positionen (Mitte, links, rechts, vorne, hinten
 und zwei Diagonalen), und die Kamera macht bei jeder Position automatisch
-ein Foto. Man muss das Schachbrett also nur einmal auf die Plattform legen,
+ein Foto. Das Schachbrett muss dabei nur einmal auf die Plattform gelegt werden,
 den Rest erledigt das System von selbst. Die genauen Kippwinkel sind in
 der Datei \texttt{positions.json} hinterlegt.
 
@@ -747,7 +745,7 @@ bei unter 1 Pixel, was für unsere Anwendung ausreichend genau ist.
 \section{Ballerkennung}
 
 In unserem System muss der Ball in Echtzeit im Kamerabild gefunden werden.
-Wir haben uns dafür für eine farbbasierte Methode entschieden, weil sie
+Es wurde eine farbbasierte Methode gewählt, weil sie
 schnell genug ist und zuverlässig funktioniert. Die Idee dahinter ist, im Bild alle Pixel zu suchen, die die Farbe
 des Balls haben, und daraus den Mittelpunkt zu berechnen.
 
@@ -764,9 +762,9 @@ Helligkeit) trennt diese Eigenschaften voneinander~\cite{opencv_colorspaces}. De
 dabei weitgehend unabhängig von der Beleuchtung. Wenn wir nach einem
 blauen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
 zu definieren, und der Filter funktioniert auch bei wechselnden
-Lichtverhältnissen zuverlässig. Da wir einen blauen Ball verwenden,
-haben wir die HSV-Grenzwerte anhand typischer Standardwerte für Blau
-gewählt und für unsere Lichtverhältnisse leicht angepasst.
+Lichtverhältnissen zuverlässig. Da ein blauer Ball verwendet wird,
+wurden die HSV-Grenzwerte anhand typischer Standardwerte für Blau
+gewählt und für die Lichtverhältnisse leicht angepasst.
 
 \subsection{Erkennungs-Pipeline}
 
@@ -810,7 +808,7 @@ lesen. Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
 Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
-Wir haben das anders gelöst. Ein eigener Thread liest die Kamera
+Dieses Problem wird anders gelöst. Ein eigener Thread liest die Kamera
 so schnell wie möglich aus und speichert dabei immer nur das aktuellste Bild.
 Wenn der Regler ein Bild anfragt, bekommt er genau dieses und hat damit
 immer den neuesten Stand, egal wann er fragt.
@@ -835,9 +833,9 @@ während der Kamera-Thread gerade schreibt.
 \section{ROI-Tracking}
 
 Statt in jedem Bild das gesamte Kamerabild nach dem Ball zu durchsuchen,
-nutzen wir ROI-Tracking (Region of Interest). Da der Ball sich zwischen zwei Frames nur minimal bewegt, muss er im
-nächsten Bild ungefähr am gleichen Ort sein wie im vorherigen. Wir suchen
-deshalb nur noch in einem kleinen Ausschnitt rund um die letzte bekannte Position.
+wird ROI-Tracking (Region of Interest) genutzt. Da der Ball sich zwischen zwei Frames nur minimal bewegt, muss er im
+nächsten Bild ungefähr am gleichen Ort sein wie im vorherigen. Gesucht
+wird deshalb nur noch in einem kleinen Ausschnitt rund um die letzte bekannte Position.
 
 Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
 Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
