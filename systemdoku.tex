@@ -420,7 +420,7 @@ Umsetzung:
 \end{figure}
 
 % ============================================================
-\chapter{Mechanik und Kinematik}
+\chapter{Kinematik}
 
 Das Ziel der Kinematik ist die Plattform im Raum um vorgegebene Winkel um die X- und Y-Achse
 drehen zu können, sowie ihre Höhe einzustellen. Dafür stehen 3 Servos mit 3 Armen zur
@@ -644,26 +644,6 @@ Abstand Endpunkt-Servo abgezogen werden.
 
 Mit der Funktion \texttt{func\_servo\_winkel} wird diese Berechnung für jeden Arm wiederholt. Diese gibt
 dann einen Winkel in Grad aus in Referenz zu der Lotlinie.
-
-\section{Ansteuerung der Servos}
-
-Nachdem im vorherigen Kapitel die Einstellwinkel für die Servos berechnet wurden, müssen
-diese nun auch in die entsprechenden Positionen gebracht werden. Dafür muss an die Servos
-ein PWM-Signal gesendet werden. Der Raspberry Pi kann jedoch nur zwei PWM-Signale mit
-Hardware erzeugen. Zumindest das dritte PWM-Signal müsste softwareseitig modelliert werden.
-Tests haben jedoch festgestellt, dass dieses Signal nicht konstant ist und die Servos zu vibrieren
-beginnen. Deshalb werden alle drei Servos mit Hilfe eines zusätzlichen Boards per Hardware-PWM betrieben.
-
-Die Klasse \texttt{PCA9685Driver} übernimmt die Ansteuerung der Servos. Dieser Funktion wird der gewünschte Stellwinkel
-übergeben, der dann dort zunächst mit einem Modifier multipliziert wird. Dieser Modifier ist ein
-Wert, der für jeden Servo bestimmt wurde, um z.\,B. die Drehrichtung anzupassen, oder mit
-einem Gain die Drehung bei gegebenem Winkel etwas zu spreizen. Anschließend wird dieser
-Wert mit einem Offset addiert. Dieser Offset hilft, dass der Servo bei dem Stellwinkel 0° auch
-wirklich senkrecht, in der gewünschten Nullposition steht. Diese Parameter erlauben die
-Kalibrierung der Servos.
-
-Anschließend wird über I\textsuperscript{2}C die gewünschte PWM-Frequenz an das Board gesendet. Die Frequenz
-verhält sich proportional von der Maximalfrequenz zum Stellwinkel vom Gesamtweg.
 
 % ============================================================
 \chapter{Computer Vision}
