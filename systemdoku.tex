@@ -301,6 +301,130 @@ Die in Abbildung~\ref{fig:Knickarmlagerung} gezeigte neue Variante des mittleren
 Die Konstruktion musste aufgrund der begrenzten Bauraumgröße des 3D-Druckers in drei Teile aufgeteilt werden. Diese Teile werden zum einen über die Lagerungen der Knickarme miteinander verbunden, zum anderen jedoch auch im Inneren der Lagertürme des Grundhalters \posnr{1} jeweils mit dem Bauteil \textit{Verspannung Lagerturm} \posnr{6} ausgesteift. In der Mitte der Baugruppe wird zu demselben Zweck die innere Grundplatte \posnr{3} verschraubt. Dadurch werden mögliche von außen einwirkende Kräfte und Momente nicht über die Lager abgeleitet, sodass der Knickarm unbeeinflusst bleibt. Diese Versteifungen sind so ausgeführt, dass gegebenenfalls Toleranzen der drei Einzelteile ausgeglichen werden können. Zusätzlich sind die Teile des Deckels untereinander sowie mit der Konstruktion verschraubt, was die Stabilität nach oben hin weiter erhöht.
 
 % ============================================================
+\chapter{Elektronik \& Gehäuse}
+
+Bearbeitet wurde dieser Teil von Marek Gerber.
+
+\section{Einleitung}
+
+Im Rahmen des Projekts wurde der Bereich Entwicklung und Umsetzung der elektronischen
+Infrastruktur bearbeitet. Dies umfasste insbesondere die Planung und Realisierung der
+Spannungsversorgung, das Verschalten der einzelnen Komponenten sowie die Konzeption und
+Fertigung eines passenden Gehäuses für den gesamten Technik-Stack. Zusätzlich wurden
+spezifische Halterungen für den Mikrocontroller und die Kamera entwickelt und integriert.
+Ziel war es, ein zuverlässiges, sicheres und übersichtliches System zu schaffen, das sowohl
+funktional als auch mechanisch stabil ist.
+
+\section{Anforderungen und Planung}
+
+Zu Beginn wurden die Anforderungen an die Elektronik und Mechanik definiert:
+
+\begin{itemize}
+  \item Gemeinsame Versorgung aller Komponenten mit geeigneter Spannung und Stromstärke
+  \item Übersichtliche und wartungsfreundliche Verkabelung
+  \item Mechanisch stabiles und kompaktes Gehäuse
+  \item Sichere Befestigung von Mikrocontroller und Kamera; die Höhe der Kamera sollte noch modifizierbar sein
+  \item Montagefreundlichkeit, gute Zugänglichkeit für Wartung und Erweiterungen
+\end{itemize}
+
+\section{Spannungsversorgung}
+
+Die Spannungsversorgung wurde zentral ausgelegt und bildet die Grundlage für den stabilen
+Betrieb des Systems.
+
+Umsetzung:
+
+\begin{itemize}
+  \item Einsatz eines zentralen 24\,V Netzteils, das als externes Netzteil umgesetzt wurde,
+        sodass im Projektgehäuse nur mit Spannungen im Schutzkleinspannungsbereich gearbeitet
+        werden musste.
+  \item Verwendung von Spannungsreglern. Es wurde ein Step-Down-Wandler verwendet, um die
+        Spannungsversorgung auf 5\,V Niveau für den MC und die Servos bereitzustellen.
+  \item Das optional zuschaltbare Ringlicht wurde direkt an die 24\,V Spannungsversorgung
+        angebunden. Um das Licht optional zuschalten zu können, wurde ein Schalter vorgesehen.
+\end{itemize}
+
+\subsection{Verwendete Komponenten}
+
+\begin{center}
+\begin{tabular}{llllr}
+  \toprule
+  Pos & Bez. & Typ & Anzahl & Stückpreis \\
+  \midrule
+  1 & Netzteil    & Taormey-2406        & 1 & 15{,}99\,€ \\
+  2 & Step-Down   & AZCelivery XL4016   & 1 & 10{,}99\,€ \\
+  3 & PWM Driver  & SunFouner PCA9685   & 1 & 13{,}99\,€ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Schaltnetzteil}
+
+Als Netzteil wurde ein kostengünstiges Universalnetzteil eingesetzt, das bei 24\,V Spannung
+einen Maximalstrom von 6\,A liefern kann. Der AC-seitige Anschluss erfolgt über einen
+Kaltgerätestecker. Auf der Niederspannungs-DC-Seite wird ein 6{,}3\,mm Rundstecker verwendet.
+
+\subsection{Step-Down-Regler}
+
+Um die Spannungsebene zur Versorgung der Servos und des MC herzustellen, wurde ein
+Step-Down-Regler verwendet. Dieser stellt bei einem Eingangsspannungsbereich von 5--40\,V
+eine Ausgangsspannung von 1{,}2 bis 35\,V bereit. Der Regler hat eine Leistung von maximal
+140\,W. Bei der Auswahl wurde auf eine gute Spannungsstabilisierung mit großer
+Kondensator-Kapazität geachtet, damit die Leistungsspitzen beim Verfahren der Servos gut
+abgepuffert werden können.
+
+\subsection{Servo-Driver}
+
+Erste Versuche mit dem Aufbau zeigten, dass die Software-PWM-Ausgänge am Raspberry Pi nicht
+geeignet für die angestrebte Verwendung waren. Deshalb haben wir uns für die Verwendung eines
+externen PWM-Drivers entschieden. Dieser kann bis zu 16 Kanäle mit Hardware-PWM bereitstellen.
+
+\section{Gehäuseentwicklung}
+
+Das Gehäuse wurde als tragende Struktur für alle Komponenten konzipiert.
+
+Umsetzung:
+
+\begin{itemize}
+  \item Konstruktion mittels CAD, um anschließend die Fertigung im 3D-Druckverfahren zu ermöglichen.
+  \item Integration von Befestigungspunkten für alle Bauteile, in die M2{,}5-Einschmelzmuttern
+        eingesetzt werden.
+  \item Kabeldurchführungen und Belüftungsöffnungen.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{20mm}
+    [Foto: Technikbox im Gehäuse – offen]
+  \vspace{20mm}}}
+  \caption{Technikbox im Gehäuse, geöffnet}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{20mm}
+    [Foto: Technikbox – geschlossen ohne Raspberry Pi]
+  \vspace{20mm}}}
+  \caption{Technikbox geschlossen}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{20mm}
+    [Foto: Verkabelung der Technikbox]
+  \vspace{20mm}}}
+  \caption{Verkabelung der Technikbox}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{20mm}
+    [Baugruppenzeichnung: Technik-Stack]
+  \vspace{20mm}}}
+  \caption{Baugruppenzeichnung Technik-Stack}
+\end{figure}
+
+% ============================================================
 \chapter{Mechanik und Kinematik}
 
 Das Ziel der Kinematik ist die Plattform im Raum um vorgegebene Winkel um die X- und Y-Achse
