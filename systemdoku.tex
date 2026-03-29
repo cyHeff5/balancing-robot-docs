@@ -959,11 +959,86 @@ Kamerainitialisierung bei jedem Bildabruf.
 % ============================================================
 \chapter{Regelung}
 
-\section{PD-Regler}
-% TODO
+In diesem Kapitel wird die Auslegung und Implementierung der Positionsregelung für den Ball-Balancing-Roboter beschrieben. Ursprünglich war ein reiner PD-Regler vorgesehen, jedoch zeigte sich in der physikalischen Modellierung und späteren Praxis schnell, dass ein I-Anteil zwingend erforderlich ist, um stationäre Regelabweichungen durch asymmetrische Reibung zu kompensieren. Die Entwicklung gliedert sich in die Aufbereitung der Sensordaten, die analytische Reglerauslegung, die Verifikation in der Simulation sowie die finale hardwarenahe Implementierung. Bearbeitet wurde dieser Teil von Hanan Jawesh.
 
-\section{Regelloop}
-% TODO
+\section{Koordinatentransformation des Kamerabildes}
+
+Bevor die Kameradaten im Regelkreis verwendet werden können, muss sichergestellt werden, dass das zweidimensionale Koordinatensystem der Kamera exakt mit dem physikalischen Koordinatensystem der Aktuatorik übereinstimmt. Eine mechanische Fehlstellung der Kamera führt zu einer unerwünschten Kreuzkopplung der X- und Y-Achsen im Regler.
+
+Um dies zu korrigieren, wurde eine softwareseitige Rotationskorrektur implementiert. Das System wird kalibriert, indem der Ball physikalisch ausschließlich entlang der positiven Y-Achse bewegt wird. Aus den vom Vision-System erfassten Pixelkoordinaten des Start- und Endpunktes ($p_1$ und $p_2$) lässt sich der Fehlwinkel der Kamera berechnen. Der aktuelle Winkel des Bewegungsvektors im Kamerabild berechnet sich zu:
+\begin{equation}
+    \theta_{\text{ist}} = \text{atan2}(p_{2,y} - p_{1,y}, p_{2,x} - p_{1,x})
+\end{equation}
+Da die physische Bewegung exakt auf der Y-Achse ($90^\circ$ bzw. $\frac{\pi}{2}$) stattfand, ergibt sich der benötigte Rotationswinkel zur Korrektur aus $\Delta\theta = \frac{\pi}{2} - \theta_{\text{ist}}$.
+Jede neu erfasste Position $(x, y)$ sowie die ermittelten Geschwindigkeiten $(v_x, v_y)$ werden in Echtzeit über eine 2D-Rotationsmatrix um den Bildmittelpunkt gedreht:
+\begin{equation}
+    \begin{pmatrix} x_{\text{korr}} \\ y_{\text{korr}} \end{pmatrix} =
+    \begin{pmatrix} \cos(\Delta\theta) & -\sin(\Delta\theta) \\ \sin(\Delta\theta) & \cos(\Delta\theta) \end{pmatrix}
+    \begin{pmatrix} x \\ y \end{pmatrix}
+\end{equation}
+Diese Transformation entkoppelt die Achsen und garantiert, dass ein Stellsignal des Reglers in X-Richtung ausschließlich eine Bewegung der Plattform in X-Richtung nach sich zieht.
+
+\section{Systemmodellierung und analytische Reglerauslegung}
+
+Um die optimalen Parameter für den Regler analytisch bestimmen zu können, muss die Regelstrecke zunächst mathematisch modelliert werden. Eine Kugel, die auf einer geneigten Ebene rollt, erfährt nicht die volle Erdbeschleunigung, da ein Teil der potentiellen Energie in Rotationsenergie übergeht.
+
+Für eine Vollkugel mit der Masse $m$, dem Radius $r$ und dem Trägheitsmoment $J = \frac{2}{5} m r^2$ ergibt sich aus dem Drallsatz und dem Newtonschen Aktionsprinzip die lineare Beschleunigung $a$ in Abhängigkeit des Neigungswinkels $\alpha$:
+\begin{equation}
+    a = g \cdot \sin(\alpha) \cdot \left( \frac{m}{m + \frac{J}{r^2}} \right) = \frac{5}{7} g \cdot \sin(\alpha)
+\end{equation}
+Für kleine Auslenkwinkel lässt sich die Übertragungsfunktion linearisieren ($\sin(\alpha) \approx \alpha$). Damit verhält sich die Strecke wie ein doppelter Integrator. Im Laplace-Raum lautet die Übertragungsfunktion der Strecke $P(s)$ somit:
+\begin{equation}
+    P(s) = \frac{X(s)}{\alpha(s)} = \frac{K_{\text{sys}}}{s^2} \quad \text{mit} \quad K_{\text{sys}} = \frac{5}{7}g
+\end{equation}
+Für die Auslegung eines PD-Reglers mit der Übertragungsfunktion $C(s) = K_p + K_d s$ ergibt sich die geschlossene Übertragungsfunktion des Regelkreises $T(s)$ zu:
+\begin{equation}
+    T(s) = \frac{P(s)C(s)}{1 + P(s)C(s)} = \frac{K_{\text{sys}} (K_d s + K_p)}{s^2 + K_{\text{sys}} K_d s + K_{\text{sys}} K_p}
+\end{equation}
+Nach der Methode der Polvorgabe wird das Nennerpolynom mit der charakteristischen Gleichung eines idealen Verzögerungsgliedes zweiter Ordnung gleichgesetzt:
+\begin{equation}
+    s^2 + K_{\text{sys}} K_d s + K_{\text{sys}} K_p = s^2 + 2\zeta\omega_n s + \omega_n^2
+\end{equation}
+Durch Koeffizientenvergleich lassen sich die optimalen Reglerparameter $K_p$ und $K_d$ in Abhängigkeit der gewünschten Dynamik direkt berechnen:
+\begin{equation}
+    K_p = \frac{\omega_n^2}{K_{\text{sys}}}, \quad K_d = \frac{2\zeta\omega_n}{K_{\text{sys}}}
+\end{equation}
+Für ein ballbalancierendes System wird ein aperiodischer Grenzfall gewählt ($\zeta = 1{,}0$), um ein Überschwingen der Kugel über den Sollwert zu verhindern. Die Eigenkreisfrequenz $\omega_n$ ist durch die Abtastrate des Systems limitiert und wurde anwendungsspezifisch gewählt.
+
+Da die reale Strecke durch Coulombsche Reibung und Haftreibung gestört wird, bleibt der Ball bei kleinen Positionsfehlern stehen. Der Regler wurde daher empirisch um einen Integralanteil ($K_i$) erweitert, der diese konstanten Störgrößen ausregelt.
+
+\section{Simulation in MATLAB/Simulink}
+
+Vor der Implementierung auf der Hardware wurde der Regler in MATLAB/Simulink verifiziert. Das Modell bildet die Nichtlinearitäten der Strecke (Haft- und Rollreibung) sowie Signaltotzeiten explizit ab.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{simulink_blockdiagramm.png}
+    \caption{Vollständiges Blockschaltbild der MATLAB/Simulink-Simulation inklusive Regler, Streckenmodell und Totzeitgliedern}
+    \label{fig:simulink_modell}
+\end{figure}
+
+Die Simulation wurde mit einer festen Schrittweite von \SI{0{,}02}{\second} parametriert, was einer Arbeitsfrequenz von \SI{50}{\hertz} entspricht. Tests mit geringeren Frequenzen zeigten einen drastischen Stabilitätsverlust, was die geforderte Abtastrate physikalisch legitimiert.
+
+Um den Windup-Effekt des Integrators zu verhindern, wurde eine Limitierung (Clamping) implementiert. Überschreitet das Reglersignal eine Ausgangsbeschleunigung von $\pm\SI{2{,}5}{\metre\per\second\squared}$, wird die Integration gestoppt. Zusätzlich wurde eine Systemtotzeit von \SI{4}{\milli\second} eingefügt, um die Signalverarbeitungsdauer zu den PWM-Treibern realitätsnah abzubilden.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{sprungantwort_scope.png}
+    \caption{Simulierte Sprungantwort des geregelten Systems auf der X- und Y-Achse bei \SI{50}{\hertz} Abtastrate}
+    \label{fig:sprungantwort}
+\end{figure}
+
+Die simulierte Sprungantwort (Abbildung~\ref{fig:sprungantwort}) zeigt ein robustes Einregelverhalten der Kugel auf den gewünschten Sollwert ohne Dauerschwingung.
+
+\section{Diskreter Regelloop und Hardware-Implementierung}
+
+Die validierte Reglerstruktur wurde als zeitdiskreter Algorithmus in Python portiert. Der PID-Regler läuft in \texttt{main\_control.py} in einer definierten Zeitschleife. Er berechnet aus der Positionsabweichung und der aktuellen Geschwindigkeit die benötigten Beschleunigungswerte $a_{x,\text{req}}$ und $a_{y,\text{req}}$. Die Geschwindigkeit wird dabei als negativer D-Anteil genutzt, um den Derivative Kick bei Sollwertsprüngen zu vermeiden.
+
+Diese Vorgaben werden auf maximal $\pm\SI{5{,}0}{\metre\per\second\squared}$ begrenzt, was ca. $30^\circ$ Plattenneigung entspricht, und anschließend an die Kinematik übergeben. Dort werden die Beschleunigungen in die benötigten Kippwinkel der Plattform umgerechnet:
+\begin{equation}
+    \theta_x = -\arcsin\!\left(\frac{a_{y,\text{req}}}{g}\right), \quad \theta_y = \arcsin\!\left(\frac{a_{x,\text{req}}}{g}\right)
+\end{equation}
+Diese Winkel dienen der inversen Kinematik als Eingabe, um die Stellwinkel der drei Servomotoren zu berechnen. Damit ist der vollständige Regelkreis von der visuellen Erfassung des Balls bis zur mechanischen Reaktion der Servomotoren geschlossen.
 
 \begin{thebibliography}{9}
 
@@ -986,6 +1061,11 @@ OpenCV Documentation.
 OpenCV Documentation.
 \textit{Morphological Transformations}.
 \url{https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html}
+
+\bibitem{unbehauen2008}
+H. Unbehauen.
+\textit{Regelungstechnik I}, 15.~Auflage.
+Vieweg+Teubner, 2008.
 
 \bibitem{intrinsic_parameters}
 ShadeCoder.
