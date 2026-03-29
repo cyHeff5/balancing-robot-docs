@@ -20,6 +20,8 @@
 \usetikzlibrary{shapes, arrows.meta, positioning}
 \usepackage{enumitem}
 \usepackage{pdfpages}
+\usepackage{setspace}
+\setstretch{1.2}
 \usepackage{hyperref}
 
 \newcommand{\posnr}[1]{(Pos.~\tikz[baseline=(c.base)]{
@@ -158,6 +160,7 @@ läuft dabei in einem eigenen Thread, sodass die Regelschleife nicht
 auf ein neues Kamerabild warten muss.
 
 \section{Hardware-Abstraktion}
+\label{sec:hardware_abstraktion}
 
 Der Pi-spezifische Code ist vollständig im Modul \texttt{hardware} gekapselt.
 Alle Servo-Treiber implementieren dasselbe abstrakte Interface
@@ -645,7 +648,9 @@ in der Lotgeraden angenommen wird, muss also noch der Winkel zwischen dem Lot un
 Abstand Endpunkt-Servo abgezogen werden.
 
 Mit der Funktion \texttt{func\_servo\_winkel} wird diese Berechnung für jeden Arm wiederholt. Diese gibt
-dann einen Winkel in Grad aus in Referenz zu der Lotlinie.
+dann einen Winkel in Grad, bezogen auf die Lotlinie, zurück.
+Wie diese Winkel anschließend im Code an die Servos übertragen werden, ist in
+Abschnitt~\ref{sec:hardware_abstraktion} beschrieben.
 
 % ============================================================
 \chapter{Computer Vision}
