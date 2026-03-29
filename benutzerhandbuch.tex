@@ -526,64 +526,6 @@ detector.stop()
 \end{lstlisting}
 
 % ============================================================
-\chapter{Modul: control}
-
-\section{PDController}
-
-\texttt{PDController} ist ein PD-Regler mit Ableitungs-Clamp und
-Ausgangs-Sättigung. Er wird für beide Achsen (X und Y) separat instanziiert.
-
-\subsection*{Konstruktor}
-
-\begin{lstlisting}
-PDController(kp, kd, u_min, u_max, d_max_abs)
-\end{lstlisting}
-
-\begin{tabularx}{\textwidth}{l l l X}
-  \toprule
-  Parameter & Typ & Standard & Beschreibung \\
-  \midrule
-  \texttt{kp} & \texttt{float} & – & Proportionalverstärkung \\
-  \texttt{kd} & \texttt{float} & – & Differentialverstärkung \\
-  \texttt{u\_min} & \texttt{float} & – & Untere Schranke des Ausgangs in Grad \\
-  \texttt{u\_max} & \texttt{float} & – & Obere Schranke des Ausgangs in Grad \\
-  \texttt{d\_max\_abs} & \texttt{float} & – & Maximaler Betrag der Ableitung; begrenzt Sprünge bei plötzlichen Messänderungen \\
-  \bottomrule
-\end{tabularx}
-
-\subsection*{Methoden}
-
-\begin{tabularx}{\textwidth}{l l X}
-  \toprule
-  Methode & Rückgabe & Beschreibung \\
-  \midrule
-  \texttt{update(error, dt)} & \texttt{float} & Berechnet den Reglerausgang für den aktuellen Fehler und die Zeitdifferenz \texttt{dt} in Sekunden. Beim ersten Aufruf wird kein Differentialanteil berechnet. \\
-  \addlinespace
-  \texttt{reset()} & – & Setzt den internen Zustand zurück, sodass der nächste \texttt{update()}-Aufruf wieder wie ein erster Aufruf behandelt wird. \\
-  \bottomrule
-\end{tabularx}
-
-\subsection*{Beispiel}
-
-\begin{lstlisting}
-from control.pd_controller import PDController
-
-ctrl_x = PDController(kp=0.3, kd=0.05, u_min=-20.0, u_max=20.0, d_max_abs=500.0)
-ctrl_y = PDController(kp=0.3, kd=0.05, u_min=-20.0, u_max=20.0, d_max_abs=500.0)
-
-# Im Regelloop:
-state = tracker.get()
-if state.valid:
-    winkel_x = ctrl_x.update(error=state.x, dt=state.dt)
-    winkel_y = ctrl_y.update(error=state.y, dt=state.dt)
-    platform.set_tilt(winkel_x, winkel_y)
-else:
-    ctrl_x.reset()
-    ctrl_y.reset()
-    platform.neutral()
-\end{lstlisting}
-
-% ============================================================
 \chapter{Konfiguration}
 
 \section{config.json}
