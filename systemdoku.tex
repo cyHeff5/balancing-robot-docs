@@ -956,10 +956,7 @@ In der finalen Implementierung wird die Kamera nicht mehr per Einzelaufnahme
 abgefragt, sondern über den in Abschnitt~\ref{sec:videostream} beschriebenen
 Stream-Thread betrieben. Da dieser den Videostream kontinuierlich liest und
 immer nur das aktuellste Frame vorhält, entfällt der Overhead der
-Kamerainitialisierung bei jedem Bildabruf. Eine erneute Latenzmessung
-mit dieser Konfiguration steht noch aus und kann mit dem Skript
-\texttt{measure\_latency.py} durchgeführt werden.
-
+Kamerainitialisierung bei jedem Bildabruf.
 % ============================================================
 \chapter{Regelung}
 
