@@ -19,6 +19,7 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes, arrows.meta, positioning}
 \usepackage{enumitem}
+\usepackage{pdfpages}
 \usepackage{hyperref}
 
 \newcommand{\posnr}[1]{(Pos.~\tikz[baseline=(c.base)]{
@@ -198,10 +199,37 @@ Im Rahmen dieses Projektes wurde die mechanische Konstruktion und der Aufbau der
 
 In der Gruppe wurde sich zunächst auf eine Platte aus Plexiglas mit dem Durchmesser \SI{250}{\milli\metre} und einer Dicke von \SI{4}{\milli\metre} geeinigt. Damit und einem zum Field of View der Kamera passenden Mindestabstand ergab sich aus der Kinematik für die Servo Kurbel \posnr{12} ein Achsabstand von \SI{70}{\milli\metre}. Für die darüberliegende Schwinge \posnr{7}\posnr{8}\posnr{9} eine Länge von \SI{179,2}{\milli\metre}.
 
-Des Weiteren wurde ein Grunddesign gewählt, das die Servo Kurbel in der Nulllage parallel zur Standfläche orientiert ist. Mit einem positiven und negativen Arbeitsraum ergibt sich so eine maximale Änderung der Plattform bei eher kleineren Winkeländerungen des Servowinkels. Bearbeitet wurde
+Des Weiteren wurde ein Grunddesign gewählt, bei dem die Servokurbel in der Nulllage parallel zur Standfläche orientiert ist. Mit einem positiven und negativen Arbeitsraum ergibt sich so eine maximale Änderung der Plattform bei eher kleineren Winkeländerungen des Servowinkels. Bearbeitet wurde
 dieser Teil von Simon Bernarding.
 
+\section{Stückliste}
 
+Die folgende Tabelle listet alle Bauteile der mechanischen Baugruppe. Der vollständige Zeichnungssatz ist in Anhang~\ref{app:zeichnungen} beigefügt.
+
+\begin{center}
+\begin{tabular}{clll}
+  \toprule
+  Pos. & Benennung & Anzahl & Material / Bemerkung \\
+  \midrule
+  1  & Grundhalter              & 1 & 3D-Druck \\
+  2  & Abdeckung                & 3 & 3D-Druck \\
+  3  & Innere Grundplatte       & 1 & 3D-Druck \\
+  4  & Klemme Unten             & 3 & 3D-Druck \\
+  5  & Klemme Oben              & 3 & 3D-Druck \\
+  6  & Verspannung Lagerturm    & 3 & 3D-Druck \\
+  7  & Verbinder Schwinge       & 3 & 3D-Druck \\
+  8  & Schwinge Oben            & 3 & 3D-Druck \\
+  9  & Schwinge Unten           & 3 & 3D-Druck \\
+  10 & Lager Bolzen Knickarm    & 3 & Stahl \\
+  11 & Abstandhalter Klemme     & 3 & 3D-Druck \\
+  12 & Servo Kurbel             & 3 & 3D-Druck \\
+  13 & Bolzen Klemme            & 3 & Stahl, M4\(\times\)0{,}7 \\
+  14 & Teilstück Deckel         & 2 & 3D-Druck \\
+  15 & Teilstück Deckel Schalter & 1 & 3D-Druck \\
+  16 & Platte                   & 1 & Plexiglas, \(\varnothing\)\SI{250}{\milli\metre} \\
+  \bottomrule
+\end{tabular}
+\end{center}
 
 \section{Freiheitsgrade}
 Bevor man nun das System konstruieren kann muss man die Freiheitsgrade so einschränken, dass man mit drei Servos das System zwangsgeführt beschreiben kann. Zur Berechnung ergibt sich folgende Formel
@@ -942,5 +970,14 @@ ShadeCoder.
 \url{https://www.shadecoder.com/de/topics/intrinsic-parameters-a-comprehensive-guide-for-2025}
 
 \end{thebibliography}
+
+% ============================================================
+\appendix
+\chapter{Zeichnungssatz Mechanische Baugruppe}
+\label{app:zeichnungen}
+
+Der folgende Zeichnungssatz wurde von Simon Bernarding erstellt und enthält die Fertigungszeichnungen aller mechanischen Bauteile des Balancing Robots.
+
+\includepdf[pages=-]{Zeichnungssatz_Bernarding.pdf}
 
 \end{document}
