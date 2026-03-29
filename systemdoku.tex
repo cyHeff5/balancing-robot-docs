@@ -13,8 +13,19 @@
 \usepackage{helvet}
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\sisetup{locale = DE}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows.meta, positioning}
 \usepackage{enumitem}
 \usepackage{hyperref}
+
+\newcommand{\posnr}[1]{(Pos.~\tikz[baseline=(c.base)]{
+    \node[draw,circle,inner sep=0pt,minimum size=2ex] (c)
+    {\scriptsize #1};})}
+
+\setcounter{secnumdepth}{4}
 \usepackage[automark]{scrlayer-scrpage}
 
 \renewcommand{\familydefault}{\sfdefault}
@@ -186,23 +197,111 @@ geladen werden, sodass sie ohne Codeänderung angepasst werden können.
 % ============================================================
 \chapter{Mechanische Konstruktion}
 
-\section{Gesamtaufbau und Designentscheidungen}
-% TODO
+\section{Mechanik \textit{(Simon Bernarding)}}
 
-\section{Rahmen und Grundplatte}
-% TODO
 
-\section{Servomontage und Hebelarme}
-% TODO
+\subsection{Ausgangslage}
+Im Rahmen dieses Projektes war ich hauptsächlich für die Mechanische Konstruktion und den Aufbau der Baugruppe verantwortlich. Darunter fällt die CAD gestützte Konstruktion, die Auswahl mechanischer Komponenten, die Fertigung der Werkstücke und die Anpassung der Mechanik im Laufe des Projektes.
 
-\section{Bewegliche Plattform}
-% TODO
+In der Gruppe wurde sich zunächst auf eine Platte aus Plexiglas mit dem Durchmesser \SI{250}{\milli\metre} und einer Dicke von \SI{4}{\milli\metre} geeinigt. Damit und einem zum Field of View der Kamera passenden Mindestabstand ergab sich aus der Kinematik für die Servo Kurbel \posnr{12} ein Achsabstand von \SI{70}{\milli\metre}. Für die darüberliegende Schwinge \posnr{7}\posnr{8}\posnr{9} eine Länge von \SI{179,2}{\milli\metre}.
 
-\section{3D-gedruckte Teile}
-% TODO: Welche Teile, Material, Druckparameter
+Des Weiteren wählte ich ein Grunddesign, das die Servo Kurbel in der Nulllage parallel zur Standfläche orientiert ist. Mit einem positiven und negativen Arbeitsraum ergibt sich so eine maximale Änderung der Plattform bei eher kleineren Winkeländerungen des Servowinkels.
 
-\section{Stückliste}
-% TODO: Tabelle aller Komponenten mit Maßen und Bezugsquellen
+
+
+\subsection{Freiheitsgrade}
+Bevor man nun das System konstruieren kann muss man die Freiheitsgrade so einschränken, dass man mit drei Servos das System zwangsgeführt beschreiben kann. Zur Berechnung ergibt sich folgende Formel
+
+\[
+F = 6(n - 1) - 6g + \sum_{i=1}^{g} f_i
+\]
+
+Hierbei bezeichnet \(n\) die Anzahl der starren Körper einschließlich des Gestells, \(g\) die Anzahl der Gelenke und \(f_i\) den Freiheitsgrad des jeweiligen Gelenks.
+
+Der Tripod besteht aus einem Grundkörper, einer beweglichen Plattform und drei identischen Knickarmen. Baut man einen Knickarm als \(\mathrm{R\!-\!R\!-\!S}\)-Kette auf, was bedeutet ein unteres \textbf{R}otationsgelenk am Motor, ein weiteres \textbf{R}otationsgelenk am Knickarm sowie ein oberes \textbf{S}phärisches Gelenk an der Plattform. Damit ergibt sich pro Bein eine Summe von \(1+1+3=5\) Gelenkfreiheitsgraden.
+\newpage
+
+Für drei Beine folgt somit:
+
+\[
+\sum_{i=1}^{g} f_i = 3 \cdot 5 = 15
+\]
+
+Die Anzahl der starren Körper beträgt insgesamt \(n=8\), bestehend aus dem Gestell, der beweglichen Plattform und je zwei beweglichen Gliedern pro Bein. Die Anzahl der Gelenke beträgt insgesamt \(g=9\), da jedes der drei Beine aus drei Gelenken besteht.
+
+Durch Einsetzen in die Formel ergibt sich:
+
+\[
+F = 6(8 - 1) - 6 \cdot 9 + 15 = 42 - 54 + 15 = 3
+\]
+
+Der Tripod besitzt somit drei Freiheitsgrade, und ist so mit drei Motoren zwangsgeführt.
+
+
+
+
+\subsection{Konstruieren der Ersten Version}
+Nachdem die Grundvoraussetzungen definiert worden waren, wurde eine erste Baugruppe abgeleitet und gefertigt. Dieses Modell ist in Abbildung~\ref{fig:V1_Zusammenbau} dargestellt. Nach dem Zusammenbau wurden jedoch Schwachstellen in der Konstruktion deutlich, welche im Laufe dieses Abschnitts erläutert werden.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.4\textwidth]{Abbildungen/Zusammenbau_Version1.png}
+	\caption[Zusammenbau der ersten Projektversion]{Zusammenbau der ersten Projektversion}
+	\label{fig:V1_Zusammenbau}
+\end{figure}
+
+Zum einen war, wie in Abbildung~\ref{fig:V1_ArmLager} dargestellt, das mittlere Gelenk des Knickarms als Kugellager ausgeführt, in welches ein Zapfen eingepresst wurde. Dabei wurden jedoch zwei Probleme ersichtlich. Zum einen wirkte sich das Lagerspiel vollständig aus und wurde nicht abgefangen. Dies hatte zur Folge, dass die Plattform bei Bewegungen merklich schwankte. Zum anderen entstanden dadurch Querkräfte auf dem Bolzen im Innenring des Lagers, wodurch dieser an der Kante des Innenrings als Schwachstelle abbrach.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.2\textwidth]{Abbildungen/V1_ArmLager.PNG}
+	\caption[Mittleres Knickarmgelenk im Schnitt]{Mittleres Knickarmgelenk im Schnitt}
+	\label{fig:V1_ArmLager}
+\end{figure}
+
+Zusätzlich zu den konstruktiven Problemen wurde schnell deutlich, dass eine eckige Grundplatte nicht zu einer runden Anordnung der Knickarme passt.
+
+Dennoch wurde diese Version fertiggestellt. Ein Abbrechen der Lagerbolzen konnte durch eine veränderte Orientierung des Bauteils während des 3D-Drucks verhindert werden. Dadurch konnten die anderen Teilbereiche des Projekts bereits mit diesem System arbeiten sowie ihre eigenen Entwicklungen testen und verbessern.
+
+
+
+\subsection{Verbesserung der Mechanik mit zweiter Version}
+Um die Fehler der ersten Version zu beheben, wurde diese vollständig überarbeitet. Ziel dieser Neugestaltung war es, zum einen die Ungenauigkeit infolge des vorhandenen Lagerspiels zu verringern, die Lagerverbindungen zu verstärken, eine optisch ansprechendere Designwahl zu treffen und das System stärker einzuhausen, um einen homogeneren Gesamtaufbau zu erzielen. Die gesamte Baugruppe ist in Abbildung~\ref{fig:GesamtV2} dargestellt.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.3\textwidth]{Abbildungen/Gesamt.PNG}
+	\caption[Gesamtaufbau der zweiten Version]{Gesamtaufbau der zweiten Version}
+	\label{fig:GesamtV2}
+\end{figure}
+
+\newpage
+\subsubsection{Lagersitz}
+In Abbildung~\ref{fig:Lagersitz} ist beispielhaft der Lagersitz des Außenrings im Knickgelenk dargestellt. Jeder Lagersitz ist prinzipiell gleich aufgebaut. Der größere äußere Ring ist im Durchmesser um \SI{2}{\milli\metre} größer als der Außendurchmesser des Rillenkugellagers. Die davon ausgehenden Vorsprünge besitzen den Außendurchmesser des Lagers. Dadurch kann dieses in den Sitz eingepresst werden. Diese Lösung wurde gewählt, da das Lager so auch dann zentriert und sauber in Position sitzt, wenn der 3D-Drucker aufgrund seiner Fertigungstoleranzen keinen perfekt kreisförmigen Sitz druckt. Die Vorsprünge sind in ungerader Anzahl kreisförmig angeordnet. Dadurch wird verhindert, dass sich zwei Vorsprünge direkt gegenüberstehen. Im hinteren Teil des Lagersitzes ist die Fläche durch eine Bohrung ausgespart, damit der Innenring bei Bewegung nicht am Material reibt.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.4\textwidth]{Abbildungen/Lagersitz.PNG}
+	\caption[Lagersitz Knickarm]{Lagersitz Knickarm}
+	\label{fig:Lagersitz}
+\end{figure}
+
+\newpage
+
+\subsubsection{Neue Lagerung Mittleres Knickarmgelenk}
+Die in Abbildung~\ref{fig:Knickarmlagerung} gezeigte neue Variante des mittleren Knickarmgelenks wurde gegenüber der Vorgängerversion grundlegend überarbeitet. Im Gegensatz zur ersten Ausführung ist das Gelenk nun symmetrisch durch ein umgreifendes Bauteil der unteren Schwinge \posnr{9} ausgeführt. In diesem Bauteil sitzen zwei Rillenkugellager, die über ihre Innenringe mittels einer Passhülse und einer Schraubverbindung auf der Servokurbel \posnr{12} geklemmt sind. Dadurch konnte das zuvor zu große Lagerspiel deutlich reduziert werden, sodass es die Bewegung beim Verfahren der Motoren nicht mehr merklich beeinträchtigt.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.3\textwidth]{Abbildungen/LagersitzKnickarmNeu.PNG}
+	\caption[Neue Lagerung mittleres Knickarmgelenk]{Neue Lagerung mittleres Knickarmgelenk}
+	\label{fig:Knickarmlagerung}
+\end{figure}
+
+
+
+\subsubsection{Weitere Merkmale der Konstruktion}
+Die Konstruktion musste aufgrund der begrenzten Bauraumgröße des 3D-Druckers in drei Teile aufgeteilt werden. Diese Teile werden zum einen über die Lagerungen der Knickarme miteinander verbunden, zum anderen jedoch auch im Inneren der Lagertürme des Grundhalters \posnr{1} jeweils mit dem Bauteil \textit{Verspannung Lagerturm} \posnr{6} ausgesteift. In der Mitte der Baugruppe wird zu demselben Zweck die innere Grundplatte \posnr{3} verschraubt. Dadurch werden mögliche von außen einwirkende Kräfte und Momente nicht über die Lager abgeleitet, sodass der Knickarm unbeeinflusst bleibt. Diese Versteifungen sind so ausgeführt, dass gegebenenfalls Toleranzen der drei Einzelteile ausgeglichen werden können. Zusätzlich sind die Teile des Deckels untereinander sowie mit der Konstruktion verschraubt, was die Stabilität nach oben hin weiter erhöht.
 
 % ============================================================
 \chapter{Mechanik und Kinematik}
