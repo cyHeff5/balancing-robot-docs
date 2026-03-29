@@ -67,15 +67,21 @@
   \end{center}
   \vfill
 
-  {\normalsize
+  \noindent
+  \begin{minipage}[b]{0.6\textwidth}
+    \normalsize
     HTW Saar – Industrielle Robotik · WiSe 2025/26\\[4pt]
-    \textbf{Team:} Simon Bernarding, Marek Gerber, Sebastian Haas, Hanan Jawesh, Leon Weyand\\[4pt]
+    \textbf{Team:} Simon Bernarding, Marek Gerber,\\
+    \hspace*{12mm} Sebastian Haas, Hanan Jawesh, Leon Weyand\\[4pt]
     \textbf{Datum:} \today
-  }
-  \vspace{8mm}
-  \IfFileExists{htw_logo.png}{%
-    \hfill\includegraphics[height=16mm]{htw_logo.png}%
-  }{}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[b]{0.35\textwidth}
+    \raggedleft
+    \IfFileExists{htw_logo.png}{%
+      \includegraphics[height=18mm]{htw_logo.png}%
+    }{}
+  \end{minipage}
 \end{titlepage}
 
 % ── Inhaltsverzeichnis ───────────────────────────────────────
