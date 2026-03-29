@@ -784,10 +784,12 @@ lesen. Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
 Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
-Dieses Problem wird anders gelöst. Ein eigener Thread liest die Kamera
-so schnell wie möglich aus und speichert dabei immer nur das aktuellste Bild.
-Wenn der Regler ein Bild anfragt, bekommt er genau dieses und hat damit
-immer den neuesten Stand, egal wann er fragt.
+Dieses Problem wird anders gelöst. Ein dedizierter Stream-Thread liest den
+Videostream der Kamera in einer Endlosschleife und überschreibt dabei
+kontinuierlich eine gemeinsame Variable mit dem jeweils neuesten Frame.
+Alte Frames werden dabei implizit verworfen. Wenn der Regler ein Bild anfragt,
+liest er genau diese Variable und erhält damit immer den aktuellsten Stand,
+unabhängig davon, wann er fragt.
 
 \begin{figure}[h]
   \centering
@@ -797,25 +799,25 @@ immer den neuesten Stand, egal wann er fragt.
       mem/.style={draw, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center, fill=gray!10},
       arr/.style={-{Stealth}, thick},
     ]
-    \node[box] (cam) {\textbf{Kamera-Thread}\\{\small liest Kamera fortlaufend}};
-    \node[mem, right=of cam] (buf) {\textbf{Gemeinsamer Speicher}\\{\small aktuellstes Bild (+ Lock)}};
+    \node[box] (cam) {\textbf{Stream-Thread}\\{\small liest Videostream,}\\{\small verwirft alte Frames}};
+    \node[mem, right=of cam] (buf) {\textbf{Aktuellstes Frame}\\{\small (gemeinsamer Speicher,}\\{\small Lock-gesichert)}};
     \node[box, right=of buf] (ctrl) {\textbf{Regel-Thread}\\{\small liest bei Bedarf}};
 
     \draw[arr] (cam) -- node[above]{\small schreibt} (buf);
     \draw[arr] (buf) -- node[above]{\small liest} (ctrl);
 
     \draw[arr, dashed] (cam.north) to[out=120,in=60,looseness=2]
-      node[above]{\small Schleife} (cam.north west);
+      node[above]{\small kontinuierlich} (cam.north west);
   \end{tikzpicture}
-  \caption{Kamera-Thread und Regel-Thread greifen über einen gemeinsamen
-  Speicherplatz auf das jeweils aktuellste Bild zu}
+  \caption{Stream-Thread und Regel-Thread greifen über einen gemeinsamen,
+  Lock-gesicherten Speicherplatz auf das jeweils aktuellste Frame zu}
 \end{figure}
 
-Damit beide Threads nicht gleichzeitig auf denselben Speicherplatz
-zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock stellt sicher,
-dass immer nur ein Thread gleichzeitig lesen oder schreiben darf. So kann es
-nicht passieren, dass der Regler ein halb-überschriebenes Bild liest,
-während der Kamera-Thread gerade schreibt.
+Damit Stream-Thread und Regel-Thread nicht gleichzeitig auf denselben
+Speicherplatz zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock
+stellt sicher, dass immer nur ein Thread gleichzeitig lesen oder schreiben darf.
+So kann es nicht passieren, dass der Regler ein halb-überschriebenes Bild liest,
+während der Stream-Thread gerade schreibt.
 
 
 \section{ROI-Tracking}
