@@ -457,7 +457,7 @@ Für eine waagerechte Plattform, in der X-Y-Ebene würde der Normalenvektor $n$ 
 \]
 
 Soll die Plattform und damit die Ebene um die X-Achse mit dem Winkel $\alpha$ und um die Y-Achse mit
-dem Winkel $\varphi$, so kann einfach der Normalenvektor $n$ der ebenen Position mit zwei
+dem Winkel $\varphi$ gedreht werden, so kann einfach der Normalenvektor $n$ der ebenen Position mit zwei
 Rotationsmatrizen gedreht werden:
 
 \[
@@ -576,7 +576,7 @@ die Erreichbarkeit geprüft und gegebenenfalls angepasst. Die neuen Parameter we
 zurück übergeben.
 
 Die erste Grenze des Bewegungsraums ist der Stellbereich des Servos. Dieser beträgt lediglich
-180°, als kann auch der mit ihm verbundene untere Arm sich nur um 180° drehen.
+180°, also kann auch der mit ihm verbundene untere Arm sich nur um 180° drehen.
 
 Der nächste begrenzende Faktor ist die Gesamtlänge der Arme. Sind beide Arme ausgestreckt,
 also in einer Linie, ist die maximale Entfernung erreicht. Sie entspricht der Länge beider Arme.
@@ -600,7 +600,7 @@ Zusätzlich muss noch beachtet werden, dass die beiden Arm-Elemente sich nur bis
 zueinander zusammenklappen können, sodass es auch einen Bereich um die Servowelle gibt, der
 nicht erreichbar ist. Diese Bedingung lässt sich auch durch eine Mindestlänge zwischen Endpunkt
 und Servowelle beschreiben. Da der Abstand in horizontaler Richtung durch die vorherigen
-Berechnungen für die Plattform-Winkel festgelegt ist, ergibt sich eine Z-Höhe, bei der der der
+Berechnungen für die Plattform-Winkel festgelegt ist, ergibt sich eine Z-Höhe, bei der der
 Endpunkt dann den Mindestabstand hätte.
 
 Für die Software werden die Daten aus Abbildung~\ref{fig:bewegungsraum} als Look-Up-Table abgespeichert und
