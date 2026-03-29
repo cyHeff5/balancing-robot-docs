@@ -12,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{helvet}
 \usepackage{booktabs}
+\usepackage{amsmath}
 \usepackage{enumitem}
 \usepackage{hyperref}
 \usepackage[automark]{scrlayer-scrpage}
@@ -206,14 +207,249 @@ geladen werden, sodass sie ohne Codeänderung angepasst werden können.
 % ============================================================
 \chapter{Mechanik und Kinematik}
 
-\section{Plattformgeometrie}
-% TODO
+Das Ziel der Kinematik ist die Plattform im Raum um vorgegebene Winkel um die X- und Y-Achse
+drehen zu können, sowie ihre Höhe einzustellen. Dafür stehen 3 Servos mit 3 Armen zur
+Verfügung, die in 120° Schritten an der Plattform befestigt sind. Diese Arme können sich nur vor,
+zurück und hoch, bzw. runter bewegen. Ein Verkippen ist nicht möglich.
 
-\section{Inverse Kinematik}
-% TODO
+Um die Plattform in die gewünschte Pose einstellen zu können, müssen die Servos verfahren
+werden. Die Rückwärtskinematik dient dazu zu berechnen, welche Einstellwinkel dort benötigt
+werden. Dafür wird zunächst die Plattform um die gewünschten Winkel gedreht, in der Höhe
+verschoben und anschließend kontrolliert, ob die Position erreichbar ist. Danach wird für jeden
+Arm der benötigte Stellwinkel des Servos ausgerechnet.
 
-\section{Solver}
-% TODO
+Dieses Vorgehen wird in den folgenden Unterkapiteln genauer beschrieben. Bearbeitet wurde
+dieser Teil von Sebastian Haas.
+
+\section{Drehen der Plattform}
+
+Der erste Schritt der Rückwärtskinematik ist es, die Plattform im Raum zu platzieren, da dadurch
+dann auch bekannt wird, wo die einzelnen Koppelpunkte zu den Armen liegen, wodurch sich dann
+Rückschlüsse zu den Stellwinkeln der Servos ziehen lassen.
+
+Zunächst lässt sich jeder Punkt auf der Plattform als Teil einer Ebene beschreiben. Diese Ebene
+lässt sich durch einen Normalenvektor und eine Konstante d beschreiben. Für jeden Punkt auf der
+Plattform muss dann folgende Gleichung gelten:
+
+\[
+  0 = n_x \cdot x + n_y \cdot y + n_z \cdot z + d
+\]
+
+Für eine waagerechte Plattform, in der X-Y-Ebene würde der Normalenvektor $n$ wie folgt aussehen:
+
+\[
+  n = \begin{pmatrix} n_x \\ n_y \\ n_z \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix}
+\]
+
+Soll die Plattform und damit die Ebene um die X-Achse mit dem Winkel $\alpha$ und um die Y-Achse mit
+dem Winkel $\varphi$, so kann einfach der Normalenvektor $n$ der ebenen Position mit zwei
+Rotationsmatrizen gedreht werden:
+
+\[
+  n =
+  \begin{pmatrix} 1 & 0 & 0 \\ 0 & \cos\alpha & -\sin\alpha \\ 0 & \sin\alpha & \cos\alpha \end{pmatrix}
+  \cdot
+  \begin{pmatrix} \cos\varphi & 0 & \sin\varphi \\ 0 & 1 & 0 \\ -\sin\varphi & 0 & \cos\varphi \end{pmatrix}
+  \cdot
+  \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix}
+\]
+
+Dieser neue Normalenvektor $n$ kann in die Ebenengleichung eingesetzt werden. Um die Konstante
+$d$ zu erhalten, muss ein Punkt $P(x, y, z)$, der Teil der Ebene sein soll, in die Gleichung eingesetzt
+werden und diese nach $d$ aufgelöst werden.
+
+Da alle Punkte auf der Plattform in dieser Ebene liegen, liegen auch die Endpunkte der Arme in
+dieser gedrehten Ebene. Gleichzeitig müssen die Endpunkte der Arme aber auch innerhalb des
+jeweiligen Bewegungsraums der Arme befinden, welcher zunächst als Ebene orthogonal zur
+Servowelle angenommen werden kann. Die möglichen Positionen für die Endpunkte liegen also
+jeweils auf der Schnittgeraden beider Ebenen. Diese Gerade kann man sich vorstellen, als die
+Gerade zwischen der Ordinate und dem Endpunkt der Servowelle, die zwar eigentlich Eben wäre,
+aber stattdessen um eine Z-Steigung $a_z$ ergänzt wurde, sodass sie in der gedrehten Plattform-Ebene liegt.
+
+Für den vorderen Arm, der sich in der Y-Z-Ebene bewegt (also immer $x = 0$), würde diese Gerade
+wie folgt aussehen:
+
+\[
+  g_v(t_v) = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix} + t_v \cdot \begin{pmatrix} 0 \\ 1 \\ a_v \end{pmatrix}
+\]
+
+Die Steigung $a_v$ ist dabei abhängig von der Ausrichtung der Plattform. Hier kann sich zur Hilfe
+genommen werden, dass alle Vektoren und Strecken innerhalb einer Ebene, also auch diese
+Gerade, rechtwinklig zum Normalenvektor sind. Sind zwei Vektoren rechtwinklig, so ist ihr
+Skalarprodukt gleich Null. Also muss folgende Gleichung gelten:
+
+\[
+  0 = 0 \cdot n_x + 1 \cdot n_y + a_v \cdot n_z
+\]
+
+Mit dieser Gleichung lässt sich $a_v$ berechnen und somit alle möglichen Endpunkte des vorderen
+Arms für diese Plattformlage beschreiben. Das Gleiche Vorgehen ist für die anderen beiden
+Endpunkte möglich:
+
+\[
+  g_l(t_l) = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix} + t_l \cdot \begin{pmatrix} -1 \\ -\tan(30°) \\ a_l \end{pmatrix}
+  \qquad
+  g_r(t_r) = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix} + t_r \cdot \begin{pmatrix} 1 \\ -\tan(30°) \\ a_r \end{pmatrix}
+\]
+
+Somit lassen sich alle möglichen Endpunkte für eine jeweilige Plattformorientierung berechnen.
+Allerdings müssen die Endpunkte der Arme noch weitere Bedingungen erfüllen. Denn diese sind
+fest auf der Plattform in 120° Schritten montiert und da die Plattform starr ist, ändert sich das
+Verhältnis zwischen ihnen auch nicht. Sie haben alle denselben Abstand zueinander
+(„Außenlänge") und jeweils denselben Abstand („Radius") zum Mittelpunkt.
+
+Werden nun drei Punkte gesucht, die auf jeweils einer der drei Geraden liegen und alle
+Untereinander den selben Abstand zueinander haben, nämlich die Außenlänge, ergeben sich
+folgende drei Gleichungen:
+
+\begin{align*}
+  \text{Außenlänge} &= \sqrt{(t_v \cdot 0 - t_l \cdot (-1))^2 + (t_v \cdot 1 - t_l \cdot (-\tan(30°)))^2 + (t_v \cdot a_v - t_l \cdot a_l)^2} \\[4pt]
+  \text{Außenlänge} &= \sqrt{(t_v \cdot 0 - t_r \cdot 1)^2 + (t_v \cdot 1 - t_r \cdot (-\tan(30°)))^2 + (t_v \cdot a_v - t_r \cdot a_l)^2} \\[4pt]
+  \text{Außenlänge} &= \sqrt{(t_l \cdot (-1) - t_r \cdot 1)^2 + (t_l \cdot (-\tan(30°)) - t_r \cdot (-\tan(30°)))^2 + (t_l \cdot a_l - t_r \cdot a_l)^2}
+\end{align*}
+
+Diese drei Gleichungen haben drei Unbekannte, namentlich die Längen der Schnittgeraden. Wird
+dieses Gleichungssystem zum Beispiel unter Zuhilfenahme numerischer Methoden gelöst, lassen
+sich so also mögliche Endpunkte für eine Pose berechnen. Dabei ist es möglich, dass sich die
+Plattform in X- und Y-Richtung verschiebt, sowie um die Z-Achse verdreht.
+
+Anschließend können alle Punkte noch gleichmäßig in der Z-Höhe verschoben, um die Plattform
+auf die richtige Höhe zu bringen.
+
+In der Software wird dies mit der Funktion \texttt{func\_kinematik\_main} umgesetzt (Ablauf
+vgl.\,Abbildung~\ref{fig:ablauf_kinematik}). Dieser werden Systemparameter, sowie die gewünschten Winkel und der auf
+konstanter Höhe zu haltende Punkt übergeben. Innerhalb dieser Funktion wird dann zunächst wie
+oben beschrieben ein gedrehter Normalenvektor berechnet und die Schnittgeraden zu dem
+Bewegungsraum der Armen aufgestellt. Anschließend wird ein Solver verwendet, um die Punkte
+mit den gleichen Abständen zu finden. Bei diesem Vorgehen wird bis dahin angenommen, dass
+die Plattform in Z-Richtung auf der Höhe Null liegt. Um jedoch die Höhe des Referenzpunktes
+konstant zu halten, wird mit dem Normalenvektor und diesem Punkt die Konstante $d$ für die
+Ebenengleichung berechnet. Mit der Ebenengleichung und den X/Y-Koordinaten der Endpunkte
+lässt sich deren neue Höhe berechnen.
+
+Nachfolgend muss dann geprüft werden, ob diese Ausrichtung der Plattform erreichbar ist. Dies
+wird im Detail im folgenden Kapitel erklärt. In der Funktion \texttt{func\_kinematik\_main} werden dann
+die Ergebnisse ausgewertet. Sollte die Position erreichbar sein, selbst wenn dies Anpassungen
+der Höhe bedarf, wird zum nächsten Schritt übergegangen und eventuell Anpassungen
+vorgenommen. Sollte die Drehung in keiner Höhe erreichbar sein, werden beide Winkel auf 95\,\%
+reduziert und die vorherigen Berechnungen werden wiederholt.
+
+Wenn eine erreichbare Position gefunden wurde, werden die benötigten Stellwinkel der Servos
+berechnet. Die dafür verwendete Funktion wird im Kapitel „Errechnen der Servo-Stellwinkel"
+näher beschrieben.
+
+Am Ende der Funktion werden alle Servo-Stellwinkel, sowie die Parameter der aktuellen
+Ebenengleichung die eventuell angepassten Winkel zurück übergeben.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.7\textwidth}{\centering\vspace{20mm}
+    [Ablaufdiagramm: func\_kinematik\_main]
+  \vspace{20mm}}}
+  \caption{Prinzipieller Ablauf der Funktion zur Berechnung der Rückwärtskinematik}
+  \label{fig:ablauf_kinematik}
+\end{figure}
+
+\section{Erreichbarkeit der Plattform}
+
+Mit dem im vorherigen Kapitel beschriebenen Weg lässt sich die Plattform theoretisch in jede
+Drehung und jede Höhe platzieren. Jedoch haben die Arme nur einen begrenzten
+Bewegungsraum, was auch die möglichen Positionen der Plattform einschränkt. Sollte probiert
+werden eine solche, nicht erreichbare Position anzufahren, kann nicht genau vorhergesehen
+werden, in welcher Position die Plattform enden wird. Um dies zu vermeiden, wird in der Software
+die Erreichbarkeit geprüft und gegebenenfalls angepasst. Die neuen Parameter werden dann
+zurück übergeben.
+
+Die erste Grenze des Bewegungsraums ist der Stellbereich des Servos. Dieser beträgt lediglich
+180°, als kann auch der mit ihm verbundene untere Arm sich nur um 180° drehen.
+
+Der nächste begrenzende Faktor ist die Gesamtlänge der Arme. Sind beide Arme ausgestreckt,
+also in einer Linie, ist die maximale Entfernung erreicht. Sie entspricht der Länge beider Arme.
+Wird dabei der Servo gedreht, ergibt sich so ein Kreis, der das äußere Limit der Arme beschreibt.
+
+Eine maximale untere Grenze wird durch die Konstruktion des Roboters gegeben. Diese wird
+deshalb als ein konstantes Limit über den Servowellen angenommen. Am Ende der Stellwege (0 und
+180°) kann einfach der obere Arm gedreht werden, um beide Grenzen zu verbinden. Dies ergibt
+dann den Bewegungsbereich, der in Abbildung~\ref{fig:bewegungsraum} zu sehen ist.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{25mm}
+    [Diagramm: Look-Up Erreichbarkeit (Höhe über Achse Servo zu Mittelpunkt)]
+  \vspace{25mm}}}
+  \caption{Bewegungsraum der Arme}
+  \label{fig:bewegungsraum}
+\end{figure}
+
+Zusätzlich muss noch beachtet werden, dass die beiden Arm-Elemente sich nur bis auf circa 20°
+zueinander zusammenklappen können, sodass es auch einen Bereich um die Servowelle gibt, der
+nicht erreichbar ist. Diese Bedingung lässt sich auch durch eine Mindestlänge zwischen Endpunkt
+und Servowelle beschreiben. Da der Abstand in horizontaler Richtung durch die vorherigen
+Berechnungen für die Plattform-Winkel festgelegt ist, ergibt sich eine Z-Höhe, bei der der der
+Endpunkt dann den Mindestabstand hätte.
+
+Für die Software werden die Daten aus Abbildung~\ref{fig:bewegungsraum} als Look-Up-Table abgespeichert und
+einmalig beim Start des Roboters in den Arbeitsspeicher geladen (\texttt{look\_up\_erreichbarkeit.mat}).
+Nachdem potenzielle Endpunkte für eine Plattform berechnet wurden, können diese mit der
+Funktion \texttt{func\_erreichbarkeit\_test} geprüft werden. Diese Funktion nutzt die zuvor beschriebene
+Look-Up-Tabelle und die zusätzliche Mindestlänge, um zu prüfen, ob sich jeder Endpunkt im
+erreichbaren Bereich befindet, indem sie deren Z-Höhe mit den Mini- und Maximalwerten für die
+Koordinaten vergleicht. Sollte ein Arm außerhalb dieses Bereiches liegen, wird geprüft, ob durch
+eine Verschiebung in Z-Richtung alle Arme erreichbar gemacht werden können. Ist dies der Fall,
+schlägt die Funktion einen Z-Offset vor. Sollte dies nicht der Fall sein, weil z.\,B. der Winkel zu steil
+ist, gibt die Funktion eine Warnung zurück.
+
+\section{Errechnen der Servo-Stellwinkel}
+
+Nachdem in den vorherigen Schritten die Plattform um die gewünschten Winkel gekippt und in
+eine erreichbare Höhe platziert wurde, können nun für jeden Arm die Einstellwinkel der Servos
+berechnet werden.
+
+Dafür wird jeder Arm einzeln betrachtet und das System von einem räumlichen in ein ebenes
+Problem überführt, wobei die neue waagerechte Achse dann die Gerade von Servowelle und
+Ordinate ist. Die Senkrechte ist die Z-Richtung des originalen Systems.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox{0.6\textwidth}{\centering\vspace{30mm}
+    [Schaubild: 2D-System mit Servo, unterem Arm, oberem Arm und Endpunkt Plattform]
+  \vspace{30mm}}}
+  \caption{Schaubild für die Rückwärtskinematik}
+  \label{fig:schaubild_kinematik}
+\end{figure}
+
+Abbildung~\ref{fig:schaubild_kinematik} zeigt dieses 2D-System mit Blick auf die Servowelle. Die Lage des Plattform-Endpunktes sind aus den vorherigen Berechnungen bekannt. Die Position des Servos ist fix, somit
+ist auch der Abstand Endpunkt-Servo bekannt, bzw. der Vektor, der diese Strecke beschreibt. Die
+Längen der Arme sind auch konstant für diesen Roboter.
+
+Somit lässt sich mit Hilfe des Kosinussatzes der Winkel $\alpha$ in diesem Dreieck berechnen.
+Allerdings ist dieser Winkel noch nicht der Stellwinkel des Servos. Da die Nullposition des Servos
+in der Lotgeraden angenommen wird, muss also noch der Winkel zwischen dem Lot und dem
+Abstand Endpunkt-Servo abgezogen werden.
+
+Mit der Funktion \texttt{func\_servo\_winkel} wird diese Berechnung für jeden Arm wiederholt. Diese gibt
+dann einen Winkel in Grad aus in Referenz zu der Lotlinie.
+
+\section{Ansteuerung der Servos}
+
+Nachdem im vorherigen Kapitel die Einstellwinkel für die Servos berechnet wurden, müssen
+diese nun auch in die entsprechenden Positionen gebracht werden. Dafür muss an die Servos
+ein PWM-Signal gesendet werden. Der Raspberry Pi kann jedoch nur zwei PWM-Signale mit
+Hardware erzeugen. Zumindest das dritte PWM-Signal müsste softwareseitig modelliert werden.
+Tests haben jedoch festgestellt, dass dieses Signal nicht konstant ist und die Servos zu vibrieren
+beginnen. Deshalb werden alle drei Servos mit Hilfe eines zusätzlichen Boards per Hardware-PWM betrieben.
+
+In der Funktion \texttt{PCA9685Driver} übernimmt die Ansteuerung der Servos, welche durch Mitarbeit von Leon
+Weyand erstellt und optimiert wurde. Dieser Funktion wird der gewünschte Stellwinkel
+übergeben, der dann dort zunächst mit einem Modifier multipliziert wird. Dieser Modifier ist ein
+Wert, der für jeden Servo bestimmt wurde, um z.\,B. die Drehrichtung anzupassen, oder mit
+einem Gain die Drehung bei gegebenem Winkel etwas zu spreizen. Anschließend wird dieser
+Wert mit einem Offset addiert. Dieser Offset hilft, dass der Servo bei dem Stellwinkel 0° auch
+wirklich senkrecht, in der gewünschten Nullposition steht. Diese Parameter erlauben die
+Kalibrierung der Servos.
+
+Anschließend wird über I\textsuperscript{2}C die gewünschte PWM-Frequenz an das Board gesendet. Die Frequenz
+verhält sich proportional von der Maximalfrequenz zum Stellwinkel vom Gesamtweg.
 
 % ============================================================
 \chapter{Computer Vision}
