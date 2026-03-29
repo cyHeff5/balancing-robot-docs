@@ -777,6 +777,7 @@ fälschlicherweise als Ball erkannt werden.
 
 
 \section{Videostream und Frame-Auswahl}
+\label{sec:videostream}
 
 Die Kamera liefert einen kontinuierlichen Videostream. Eine naive Umsetzung
 würde bei jeder Anfrage einfach das nächste verfügbare Bild aus dem Puffer
@@ -892,25 +893,72 @@ Damit der Regler stabil funktioniert, muss die Verarbeitungszeit der
 CV-Komponente klein genug sein. Wenn die Erkennung zu langsam ist,
 bekommt der Regler veraltete Informationen, weil der Ball sich schon
 weiterbewegt hat, während der Regler noch auf die letzte Messung reagiert.
+Die Latenz wurde deshalb auf dem Raspberry Pi in mehreren Entwicklungsstufen
+gemessen und schrittweise optimiert. Dabei wird zwischen drei Phasen
+unterschieden, die den Zeitraum der Detektion (\texttt{detect}),
+den Bildabruf (\texttt{capture}) und die Farbraumkonvertierung
+(\texttt{convert}) erfassen.
 
-Wir haben deshalb die Latenz auf dem Raspberry Pi gemessen. Dabei wird
-unterschieden zwischen der Zeit, die das Holen des aktuellen Frames
-braucht, und der Zeit für die eigentliche Erkennung.
+\textbf{Stufe 1 – Basisimplementierung ohne Optimierungen.}
+In der ersten Messung wurde die Erkennung ohne ROI-Tracking und ohne
+Downsampling betrieben. Jedes Bild wurde dabei per Einzelaufnahme von
+der Kamera geholt. Tabelle~\ref{tab:latenz1} zeigt die gemessenen Werte.
+Die Erkennung selbst dauerte im Mittel \SI{431,77}{\milli\second}, was
+einer Bildrate von lediglich 2,22\,FPS entspricht. Damit war das System
+für den Einsatz im Regelkreis noch nicht geeignet.
 
-% Grafik: Tabelle oder Balkendiagramm mit gemessenen Latenzen
-% (Werte hier eintragen sobald Messung auf Pi gelaufen ist)
-\begin{figure}[h]
-  \centering
-  \fbox{\parbox{0.7\textwidth}{\centering\vspace{15mm}
-    [Tabelle: Messergebnisse get\_frame / detect / total,
-    jeweils Mittelwert, Median, p95]
-  \vspace{15mm}}}
-  \caption{Gemessene Latenz der CV-Komponente auf dem Raspberry Pi}
-\end{figure}
+\begin{table}[h]
+\centering
+\caption{Latenzmessung Stufe 1 – ohne Optimierungen}
+\label{tab:latenz1}
+\begin{tabular}{lrrrr}
+  \toprule
+  Metrik & Mittelwert (ms) & Median (ms) & Min (ms) & Max (ms) \\
+  \midrule
+  capture & 18{,}22 & 17{,}38 & 14{,}14 & 40{,}95 \\
+  convert & 0{,}16  & 0{,}01  & 0{,}01  & 5{,}72  \\
+  detect  & 431{,}77 & 425{,}71 & 389{,}79 & 510{,}75 \\
+  total   & 450{,}15 & 444{,}58 & 404{,}13 & 527{,}43 \\
+  \midrule
+  \multicolumn{2}{l}{Geschätzte FPS (Mittelwert)} & \multicolumn{3}{r}{2{,}22} \\
+  \bottomrule
+\end{tabular}
+\end{table}
 
-Das Skript \texttt{measure\_latency.py} kann nach Änderungen an der
-Konfiguration, zum Beispiel nach einem Kameraaustauch oder Anpassungen
-am ROI-Tracking, erneut ausgeführt werden.
+\textbf{Stufe 2 – ROI-Tracking und Downsampling.}
+Durch die Einführung von ROI-Tracking und Downsampling konnte die
+Detektionszeit drastisch reduziert werden. Die Kamera wurde weiterhin
+per Einzelaufnahme abgefragt. Die Ergebnisse sind in
+Tabelle~\ref{tab:latenz2} dargestellt. Die Detektionszeit sank auf
+im Mittel \SI{62,87}{\milli\second}, die Gesamtlatenz auf
+\SI{82,63}{\milli\second}, was einer Bildrate von 12,10\,FPS entspricht.
+
+\begin{table}[h]
+\centering
+\caption{Latenzmessung Stufe 2 – mit ROI-Tracking und Downsampling}
+\label{tab:latenz2}
+\begin{tabular}{lrrrr}
+  \toprule
+  Metrik & Mittelwert (ms) & Median (ms) & Min (ms) & Max (ms) \\
+  \midrule
+  capture & 19{,}76 & 17{,}87 & 14{,}20 & 43{,}29 \\
+  convert & 0{,}01  & 0{,}01  & 0{,}01  & 0{,}02  \\
+  detect  & 62{,}87 & 62{,}36 & 60{,}56 & 90{,}73 \\
+  total   & 82{,}63 & 80{,}81 & 75{,}09 & 112{,}26 \\
+  \midrule
+  \multicolumn{2}{l}{Geschätzte FPS (Mittelwert)} & \multicolumn{3}{r}{12{,}10} \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Stufe 3 – Stream-Thread statt Einzelaufnahmen.}
+In der finalen Implementierung wird die Kamera nicht mehr per Einzelaufnahme
+abgefragt, sondern über den in Abschnitt~\ref{sec:videostream} beschriebenen
+Stream-Thread betrieben. Da dieser den Videostream kontinuierlich liest und
+immer nur das aktuellste Frame vorhält, entfällt der Overhead der
+Kamerainitialisierung bei jedem Bildabruf. Eine erneute Latenzmessung
+mit dieser Konfiguration steht noch aus und kann mit dem Skript
+\texttt{measure\_latency.py} durchgeführt werden.
 
 % ============================================================
 \chapter{Regelung}
