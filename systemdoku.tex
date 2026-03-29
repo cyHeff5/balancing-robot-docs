@@ -775,9 +775,11 @@ Ort sein wie im vorherigen. Gesucht wird deshalb nur noch in einem kleinen
 Ausschnitt rund um die letzte bekannte Position.
 
 Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
-Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
+Wird der Ball in diesem Ausschnitt fünfmal hintereinander nicht gefunden
 (zum Beispiel weil er sich zu schnell bewegt hat), wird automatisch wieder
 das gesamte Bild durchsucht und ein neuer Suchbereich festgelegt.
+Der Grenzwert von fünf Fehlversuchen ist über den Parameter
+\texttt{roi\_miss\_limit} konfigurierbar.
 
 \subsection{Downsampling}
 
