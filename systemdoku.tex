@@ -77,16 +77,13 @@
 \tableofcontents
 
 % ============================================================
-\chapter{Systemübersicht}
+\chapter{Projektziel}
 
-\section{Projektziel}
-% TODO
+Im Rahmen der Lehrveranstaltung Industrielle Robotik an der HTW Saar (WiSe 2025/26) wurde ein ballbalancierender Roboter entwickelt. Ziel des Projekts ist es, einen Ball auf einer beweglichen Plattform mithilfe eines geschlossenen Regelkreises zu stabilisieren.
 
-\section{Systemarchitektur}
-% TODO
+Die Plattform wird von drei Servomotoren über eine Tripod-Mechanik gekippt. Eine Kamera erfasst kontinuierlich das Bild der Plattform; eine Bildverarbeitungskomponente erkennt die aktuelle Ballposition. Ein PD-Regler berechnet daraus die notwendigen Kippwinkel der Plattform, die über die inverse Kinematik in Servowinkel umgerechnet und an die Motoren übertragen werden.
 
-\section{Hardwarekomponenten}
-% TODO
+Als Recheneinheit wird ein Raspberry Pi eingesetzt, auf dem alle Komponenten (Bildverarbeitung, Regelung und Servoansteuerung) in Echtzeit ausgeführt werden.
 
 % ============================================================
 \chapter{Softwarearchitektur}
