@@ -53,7 +53,10 @@
 
 % ── Titelseite ───────────────────────────────────────────────
 \begin{titlepage}
-  \vspace*{40mm}
+  \vspace*{5mm}
+  \IfFileExists{htw_logo.png}{%
+    \hfill\includegraphics[height=16mm]{htw_logo.png}\\[4mm]%
+  }{}
   {\color{htbblue}\rule{\textwidth}{1.5pt}}
   \vspace{6mm}
 
@@ -62,17 +65,18 @@
   {\Large\color{htbblue} API \& Benutzerhandbuch\par}
   \vspace{6mm}
   {\color{htbblue}\rule{\textwidth}{0.5pt}}
-  \vspace{8mm}
+
+  \vfill
+  \begin{center}
+    \includegraphics[width=0.65\textwidth]{Gesamt.PNG}
+  \end{center}
+  \vfill
 
   {\normalsize
     HTW Saar – Industrielle Robotik · WiSe 2025/26\\[4pt]
-    \textbf{Version:} 1.0\quad\textbf{Datum:} \today
+    \textbf{Team:} Simon Bernarding, Marek Gerber, Sebastian Haas, Hanan Jawesh, Leon Weyand\\[4pt]
+    \textbf{Datum:} \today
   }
-
-  \vfill
-  \IfFileExists{htw_logo.png}{%
-    \includegraphics[height=16mm]{htw_logo.png}%
-  }{}
 \end{titlepage}
 
 % ── Inhaltsverzeichnis ───────────────────────────────────────
