@@ -714,13 +714,14 @@ Das Ergebnis der Kalibrierung wird als \texttt{intrinsics.npz} gespeichert
 und enthält die Kameramatrix sowie die Verzerrungskoeffizienten.
 Als Qualitätsmaß gibt OpenCV den sogenannten RMS-Reprojektionsfehler aus,
 der angibt wie genau die berechneten Parameter zum tatsächlichen Bild passen.
-Je kleiner der Wert, desto besser. Bei unserer Kalibrierung lag er
-bei unter 1 Pixel, was für unsere Anwendung ausreichend genau ist.
+Je kleiner der Wert, desto besser. Die durchgeführte Kalibrierung erzielte
+einen Fehler von unter 1 Pixel, was für die vorliegende Anwendung
+ausreichend genau ist.
 
 
 \section{Ballerkennung}
 
-In unserem System muss der Ball in Echtzeit im Kamerabild gefunden werden.
+Der Ball muss in Echtzeit im Kamerabild gefunden werden.
 Es wurde eine farbbasierte Methode gewählt, weil sie
 schnell genug ist und zuverlässig funktioniert. Die Idee dahinter ist, im Bild alle Pixel zu suchen, die die Farbe
 des Balls haben, und daraus den Mittelpunkt zu berechnen.
@@ -735,8 +736,8 @@ was einen stabilen Farbfilter schwer umsetzbar macht.
 
 Der HSV-Farbraum (Hue, Saturation, Value, also Farbton, Sättigung und
 Helligkeit) trennt diese Eigenschaften voneinander~\cite{opencv_colorspaces}. Der Farbton bleibt
-dabei weitgehend unabhängig von der Beleuchtung. Wenn wir nach einem
-blauen Ball suchen, reicht es im HSV-Raum einen Bereich im Farbton
+dabei weitgehend unabhängig von der Beleuchtung. Da nach einem
+blauen Ball gesucht wird, reicht es im HSV-Raum einen Bereich im Farbton
 zu definieren, und der Filter funktioniert auch bei wechselnden
 Lichtverhältnissen zuverlässig. Da ein blauer Ball verwendet wird,
 wurden die HSV-Grenzwerte anhand typischer Standardwerte für Blau
@@ -765,6 +766,27 @@ mindestens 500~Pixel² groß und der Radius mindestens 10~Pixel sein.
 Diese Mindestgrenzen verhindern, dass Reflexionen oder Bildrauschen
 fälschlicherweise als Ball erkannt werden.
 
+\subsection{ROI-Tracking}
+
+Statt in jedem Bild das gesamte Kamerabild nach dem Ball zu durchsuchen,
+wird ROI-Tracking (Region of Interest) genutzt. Da der Ball sich zwischen
+zwei Frames nur minimal bewegt, muss er im nächsten Bild ungefähr am gleichen
+Ort sein wie im vorherigen. Gesucht wird deshalb nur noch in einem kleinen
+Ausschnitt rund um die letzte bekannte Position.
+
+Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
+Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
+(zum Beispiel weil er sich zu schnell bewegt hat), wird automatisch wieder
+das gesamte Bild durchsucht und ein neuer Suchbereich festgelegt.
+
+\subsection{Downsampling}
+
+Zusätzlich zum ROI-Tracking wird das Suchfenster vor der Verarbeitung
+auf eine kleinere Auflösung skaliert. Dadurch verringert sich die Anzahl der
+zu verarbeitenden Pixel weiter, was die Detektionszeit deutlich reduziert.
+Der Genauigkeitsverlust durch das Downsampling ist für die Ballpositionierung
+im Regelkreis vernachlässigbar, da die Bildkoordinaten ohnehin nur auf
+Pixelebene benötigt werden.
 
 \section{Videostream und Frame-Auswahl}
 \label{sec:videostream}
@@ -811,41 +833,20 @@ So kann es nicht passieren, dass der Regler ein halb-überschriebenes Bild liest
 während der Stream-Thread gerade schreibt.
 
 
-\section{ROI-Tracking}
+\section{Zustandsschätzung}
 
-Statt in jedem Bild das gesamte Kamerabild nach dem Ball zu durchsuchen,
-wird ROI-Tracking (Region of Interest) genutzt. Da der Ball sich zwischen zwei Frames nur minimal bewegt, muss er im
-nächsten Bild ungefähr am gleichen Ort sein wie im vorherigen. Gesucht
-wird deshalb nur noch in einem kleinen Ausschnitt rund um die letzte bekannte Position.
+Die Klasse \texttt{BallTracker} bildet die Schnittstelle zwischen der
+Bilderkennung und dem Regler. Sie kapselt intern einen
+\texttt{BallDetectorRuntime} und erweitert dessen Ausgabe um eine
+Geschwindigkeitsschätzung. Der Regler ruft ausschließlich
+\texttt{BallTracker} auf und erhält als Antwort ein \texttt{BallState}-Objekt.
 
-Das reduziert den Rechenaufwand deutlich und erhöht die Erkennungsgeschwindigkeit.
-Wenn der Ball in diesem Ausschnitt mehrfach hintereinander nicht gefunden wird
-(zum Beispiel weil er sich zu schnell bewegt hat), wird automatisch wieder
-das gesamte Bild durchsucht und ein neuer Suchbereich festgelegt.
+Alle Positionswerte beziehen sich auf ein einheitliches Koordinatensystem
+mit dem Ursprung in der Bildmitte. Positive $x$-Richtung zeigt nach rechts,
+positive $y$-Richtung nach unten. Die Werte werden in Pixeln angegeben.
 
-% Grafik: Skizze ROI-Fenster auf Kamerabild
-\begin{figure}[h]
-  \centering
-  \fbox{\parbox{0.5\textwidth}{\centering\vspace{20mm}
-    [Kamerabild mit eingezeichnetem ROI-Fenster um den Ball]
-  \vspace{20mm}}}
-  \caption{ROI-Suchfenster rund um die letzte bekannte Ballposition}
-\end{figure}
-
-
-\section{Geschwindigkeitsschätzung}
-
-Alle Positionswerte, die die CV-Komponente ausgibt, beziehen sich auf ein
-einheitliches Koordinatensystem mit dem Ursprung in der Bildmitte. Positive
-$x$-Richtung zeigt nach rechts, positive $y$-Richtung nach unten.
-Die Werte werden in Pixeln angegeben.
-
-
-Neben der Position wird auch die Geschwindigkeit des Balls berechnet
-und an den Regler weitergegeben.
-
-Wir berechnen die Geschwindigkeit aus zwei aufeinanderfolgenden Messungen,
-indem wir die Positionsänderung durch die vergangene Zeit teilen.
+Die Geschwindigkeit wird aus zwei aufeinanderfolgenden Messungen berechnet,
+indem die Positionsänderung durch die vergangene Zeit geteilt wird:
 
 \[
   v_x = \frac{x_{\text{neu}} - x_{\text{alt}}}{\Delta t}, \qquad
@@ -855,12 +856,12 @@ indem wir die Positionsänderung durch die vergangene Zeit teilen.
 Zusätzlich wird der Betrag der Gesamtgeschwindigkeit berechnet:
 $v = \sqrt{v_x^2 + v_y^2}$.
 
-Wenn kein Ball erkannt wird, oder wenn es noch keine vorherige Messung gibt,
-liefert die Komponente einen Zustand mit \texttt{valid = False} zurück.
+Wird kein Ball erkannt oder liegt noch keine vorherige Messung vor,
+gibt \texttt{BallTracker} einen Zustand mit \texttt{valid = False} zurück.
 Der Regler wertet dieses Flag aus und fährt die Plattform in diesem Fall
 in die Neutralposition.
 
-Der vollständige Ausgabe-Datensatz der CV-Komponente setzt sich wie folgt zusammen.
+Der vollständige Ausgabe-Datensatz setzt sich wie folgt zusammen.
 
 \begin{center}
 \begin{tabular}{lll}
