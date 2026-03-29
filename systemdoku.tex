@@ -791,10 +791,22 @@ immer den neuesten Stand, egal wann er fragt.
 
 \begin{figure}[h]
   \centering
-  \fbox{\parbox{0.85\textwidth}{\centering\vspace{15mm}
-    [Diagramm: Kamera-Thread schreibt kontinuierlich, Regel-Thread
-    liest immer das neueste Bild]
-  \vspace{15mm}}}
+  \begin{tikzpicture}[
+      node distance=2.2cm,
+      box/.style={draw, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center, fill=white},
+      mem/.style={draw, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center, fill=gray!10},
+      arr/.style={-{Stealth}, thick},
+    ]
+    \node[box] (cam) {\textbf{Kamera-Thread}\\{\small liest Kamera fortlaufend}};
+    \node[mem, right=of cam] (buf) {\textbf{Gemeinsamer Speicher}\\{\small aktuellstes Bild (+ Lock)}};
+    \node[box, right=of buf] (ctrl) {\textbf{Regel-Thread}\\{\small liest bei Bedarf}};
+
+    \draw[arr] (cam) -- node[above]{\small schreibt} (buf);
+    \draw[arr] (buf) -- node[above]{\small liest} (ctrl);
+
+    \draw[arr, dashed] (cam.north) to[out=120,in=60,looseness=2]
+      node[above]{\small Schleife} (cam.north west);
+  \end{tikzpicture}
   \caption{Kamera-Thread und Regel-Thread greifen über einen gemeinsamen
   Speicherplatz auf das jeweils aktuellste Bild zu}
 \end{figure}
