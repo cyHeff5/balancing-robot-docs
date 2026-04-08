@@ -115,12 +115,12 @@ Das Projekt gliedert sich in folgende Module:
   \texttt{kinematik}           & Berechnet aus gewünschten Kippwinkeln die nötigen Servowinkel \\
   \texttt{hardware}            & Steuert die Servos an, enthält Pi-spezifischen Code \\
   \texttt{vision}              & Erkennt den Ball im Kamerabild und schätzt Position und Geschwindigkeit \\
-  \texttt{control}             & Enthält den PD-Regler \\
+  \texttt{control}             & Enthält den PID-Regler \\
   \bottomrule
 \end{tabular}
 \end{center}
 
-Der Einstiegspunkt für den laufenden Betrieb ist \texttt{main\_control.py}.
+Der Einstiegspunkt für den laufenden Betrieb ist \texttt{main.py}.
 Dort werden alle Komponenten instanziiert und der Regelloop gestartet.
 
 \section{Schichtenarchitektur}
@@ -151,8 +151,8 @@ zeigt den vollständigen Aufbau mit allen Komponenten und ihren Verbindungen.
   \label{fig:komponenten}
 \end{figure}
 
-Im laufenden Betrieb läuft \texttt{main\_control.py} in einer festen
-Regelschleife mit 30\,Hz. Pro Durchlauf liest der Regler den aktuellen
+Im laufenden Betrieb läuft \texttt{main.py} in einer festen
+Regelschleife mit 120\,Hz. Pro Durchlauf liest der Regler den aktuellen
 Ballzustand aus dem \texttt{BallTracker}, berechnet die gewünschten
 Kippwinkel und übergibt sie an \texttt{Platform}. Wenn kein Ball erkannt
 wird, fährt die Plattform in die Neutralstellung. Die Bildverarbeitung
