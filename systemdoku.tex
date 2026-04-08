@@ -810,20 +810,21 @@ Wenn der Regler eine neue Messung braucht, liest er diese Variable
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}[
-      node distance=1.9cm,
-      box/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1.2cm, align=center, fill=white},
-      mem/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1.2cm, align=center, fill=gray!10},
+      node distance=2.0cm,
+      box/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1.1cm, align=center, fill=white},
+      mem/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1.1cm, align=center, fill=gray!10},
       arr/.style={-{Stealth}, thick},
     ]
     \node[box] (stream) {\textbf{Stream-Thread}\\{\small holt Frames}};
     \node[mem, right=of stream] (frame) {\textbf{Neuester Frame}\\{\small (Lock-gesichert)}};
     \node[box, right=of frame] (detect) {\textbf{Detection-Thread}\\{\small erkennt Ball}};
-    \node[mem, right=of detect] (result) {\textbf{Letztes Ergebnis}\\{\small (Lock-gesichert)}};
-    \node[box, right=of result] (ctrl) {\textbf{Regelkreis}\\{\small liest bei Bedarf}};
+
+    \node[mem, below=1.2cm of detect] (result) {\textbf{Letztes Ergebnis}\\{\small (Lock-gesichert)}};
+    \node[box, left=of result] (ctrl) {\textbf{Regelkreis}\\{\small liest bei Bedarf}};
 
     \draw[arr] (stream) -- node[above]{\small schreibt} (frame);
     \draw[arr] (frame) -- node[above]{\small liest} (detect);
-    \draw[arr] (detect) -- node[above]{\small schreibt} (result);
+    \draw[arr] (detect) -- node[right]{\small schreibt} (result);
     \draw[arr] (result) -- node[above]{\small liest} (ctrl);
 
     \draw[arr, dashed] (stream.north) to[out=120,in=60,looseness=2]
