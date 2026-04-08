@@ -124,7 +124,7 @@ python -m tools.demo
 Für den vollständigen Regelkreis ohne Weboberfläche:
 
 \begin{lstlisting}
-python main_control.py
+python main.py
 \end{lstlisting}
 
 % ============================================================
@@ -132,9 +132,8 @@ python main_control.py
 
 \section{Klasse Platform}
 
-\texttt{Platform} ist die zentrale Klasse zur Steuerung der Plattform.
-Sie verbindet die Kinematik-Berechnung mit dem Servo-Treiber und ist
-der einzige Berührungspunkt für den Regelkreis.
+\texttt{Platform} verbindet die Kinematik-Berechnung mit dem Servo-Treiber.
+Der Regelkreis kommuniziert ausschließlich über diese Klasse.
 
 \subsection*{Konstruktor}
 
@@ -158,7 +157,7 @@ Platform(driver, geometry=None, solver_method="scipy")
   \toprule
   Methode & Beschreibung \\
   \midrule
-  \texttt{set\_tilt(winkel\_x, winkel\_y)} & Kippt die Plattform um den angegebenen Winkel in X- und Y-Richtung (in Grad). Berechnet intern die Servowinkel und sendet sie an den Treiber. \\
+  \texttt{set\_tilt(winkel\_x, winkel\_y, ref\_point=None)} & Kippt die Plattform um den angegebenen Winkel in X- und Y-Richtung (in Grad). Der optionale \texttt{ref\_point} verschiebt den Rotationspunkt, z.\,B. auf die aktuelle Ballposition. \\
   \addlinespace
   \texttt{neutral()} & Fährt die Plattform in die Neutralposition (0°, 0°). \\
   \addlinespace
@@ -389,10 +388,10 @@ hsv_range = HsvRange(
 
 \section{BallDetectorRuntime}
 
-\texttt{BallDetectorRuntime} kapselt den Kamerazugriff und die Ballerkennung.
-Ein Hintergrund-Thread liest kontinuierlich Frames von der Kamera.
-Die Methode \texttt{read()} liefert zu jedem Zeitpunkt das Ergebnis
-der letzten Erkennung.
+\texttt{BallDetectorRuntime} übernimmt Kamerazugriff und Ballerkennung.
+Ein Hintergrund-Thread greift kontinuierlich Frames und führt die
+Erkennung direkt durch. Das Ergebnis steht über \texttt{get\_last\_measurement()}
+jederzeit bereit.
 
 \subsection*{Konstruktor}
 
@@ -424,25 +423,22 @@ BallDetectorRuntime(hsv_range, frame_size=(640, 480),
   \toprule
   Methode & Rückgabe & Beschreibung \\
   \midrule
-  \texttt{start()} & – & Startet die Kamera und den Hintergrund-Thread. Muss vor dem ersten \texttt{read()} aufgerufen werden. \\
+  \texttt{start()} & – & Startet die Kamera und den Hintergrund-Thread. \\
   \addlinespace
   \texttt{stop()} & – & Stoppt den Hintergrund-Thread und gibt die Kamera frei. \\
   \addlinespace
-  \texttt{read()} & \texttt{BallMeasurement} & Liefert das Erkennungsergebnis für den aktuellen Frame. \\
+  \texttt{get\_last\_measurement()} & \texttt{BallMeasurement | None} & Letztes Erkennungsergebnis des Hintergrund-Threads. \\
   \addlinespace
-  \texttt{read\_with\_frame()} & \texttt{(BallMeasurement, np.ndarray)} & Wie \texttt{read()}, gibt zusätzlich den verarbeiteten Frame als BGR-Array zurück. \\
+  \texttt{get\_latest\_frame()} & \texttt{np.ndarray | None} & Gibt den zuletzt aufgenommenen Frame zurück. \\
   \addlinespace
-  \texttt{get\_latest\_frame()} & \texttt{np.ndarray | None} & Gibt den zuletzt aufgenommenen Frame zurück, ohne eine Erkennung durchzuführen. \\
-  \addlinespace
-  \texttt{get\_last\_measurement()} & \texttt{BallMeasurement | None} & Gibt das Ergebnis der letzten abgeschlossenen Erkennung zurück, ohne einen neuen Frame zu lesen. \\
+  \texttt{read\_with\_frame()} & \texttt{(BallMeasurement, np.ndarray)} & Gibt letztes Messergebnis und Frame zurück. Wird vom Demo-Tool verwendet. \\
   \bottomrule
 \end{tabularx}
 
 \section{BallMeasurement}
 
-\texttt{BallMeasurement} ist das Rückgabe-Objekt von \texttt{read()}.
-Alle Koordinaten sind relativ zur Bildmitte in Pixeln angegeben.
-Die positive X-Achse zeigt nach rechts, die positive Y-Achse nach oben.
+\texttt{BallMeasurement} ist das Rückgabe-Objekt von \texttt{get\_last\_measurement()}.
+Koordinaten sind relativ zur Bildmitte angegeben.
 
 \begin{tabularx}{\textwidth}{l l X}
   \toprule
@@ -459,8 +455,9 @@ Die positive X-Achse zeigt nach rechts, die positive Y-Achse nach oben.
 
 \section{BallTracker}
 
-\texttt{BallTracker} erweitert \texttt{BallDetectorRuntime} um eine
-Geschwindigkeitsschätzung per finiter Differenz.
+\texttt{BallTracker} berechnet aus aufeinanderfolgenden Messungen die
+Ballgeschwindigkeit. Da der Regelloop schneller läuft als die Kamera,
+zeigt \texttt{is\_new\_frame} ob ein wirklich neues Bild vorliegt.
 
 \subsection*{Konstruktor}
 
@@ -482,7 +479,7 @@ BallTracker(runtime)
   \toprule
   Methode & Rückgabe & Beschreibung \\
   \midrule
-  \texttt{get()} & \texttt{BallState} & Liest den aktuellen Frame und berechnet Position sowie Geschwindigkeit. Beim ersten Aufruf oder nach einem Verlust des Balls ist \texttt{valid = False}. \\
+  \texttt{get()} & \texttt{BallState} & Gibt Position und Geschwindigkeit des Balls zurück. Beim ersten Aufruf oder wenn kein Ball erkannt wird ist \texttt{valid = False}. \\
   \bottomrule
 \end{tabularx}
 
@@ -492,13 +489,13 @@ BallTracker(runtime)
   \toprule
   Feld & Typ & Beschreibung \\
   \midrule
-  \texttt{valid} & \texttt{bool} & \texttt{True} wenn ein Ball erkannt wurde und eine Geschwindigkeit berechnet werden konnte \\
+  \texttt{valid} & \texttt{bool} & \texttt{True} wenn ein Ball erkannt wurde \\
+  \texttt{is\_new\_frame} & \texttt{bool} & \texttt{True} bei neuem Kamera-Frame, \texttt{False} wenn der Regler schneller ist als die Kamera \\
+  \texttt{timestamp\_s} & \texttt{float} & Zeitstempel der Bildaufnahme (\texttt{perf\_counter}) \\
   \texttt{x} & \texttt{float} & X-Position relativ zur Bildmitte in Pixeln \\
   \texttt{y} & \texttt{float} & Y-Position relativ zur Bildmitte in Pixeln \\
   \texttt{vx} & \texttt{float} & Geschwindigkeit in X-Richtung in px/s \\
   \texttt{vy} & \texttt{float} & Geschwindigkeit in Y-Richtung in px/s \\
-  \texttt{v} & \texttt{float} & Betrag der Geschwindigkeit in px/s \\
-  \texttt{dt} & \texttt{float} & Zeitdifferenz zur vorherigen Messung in Sekunden \\
   \bottomrule
 \end{tabularx}
 
