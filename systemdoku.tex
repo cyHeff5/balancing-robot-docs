@@ -156,7 +156,7 @@ Regelschleife mit 120\,Hz. Pro Durchlauf liest der Regler den aktuellen
 Ballzustand aus dem \texttt{BallTracker}, berechnet die gewünschten
 Kippwinkel und übergibt sie an \texttt{Platform}. Wenn kein Ball erkannt
 wird, fährt die Plattform in die Neutralstellung. Die Bildverarbeitung
-läuft dabei in einem eigenen Thread, sodass die Regelschleife nicht
+läuft dabei in zwei parallelen Hintergrund-Threads, sodass die Regelschleife nicht
 auf ein neues Kamerabild warten muss.
 
 \section{Hardware-Abstraktion}
@@ -703,8 +703,8 @@ Wichtig ist dabei, möglichst viele verschiedene Perspektiven abzudecken,
 damit die Kalibrierung auch an den Bildrändern zuverlässig ist. Um das
 ohne viel manuellen Aufwand zu erreichen, wurde der Aufnahmeprozess
 direkt mit der Plattform automatisiert. Die Plattform kippt nacheinander
-in sieben verschiedene Positionen (Mitte, links, rechts, vorne, hinten
-und zwei Diagonalen), und die Kamera macht bei jeder Position automatisch
+in 16 verschiedene Positionen (flach, vier Achsrichtungen in zwei Winkelstufen,
+vier Diagonalen und eine abschließende Flachstellung), und die Kamera macht bei jeder Position automatisch
 ein Foto. Das Schachbrett muss dabei nur einmal auf die Plattform gelegt werden,
 den Rest erledigt das System von selbst. Die genauen Kippwinkel sind in
 der Datei \texttt{positions.json} hinterlegt.
@@ -951,12 +951,12 @@ im Mittel \SI{62,87}{\milli\second}, die Gesamtlatenz auf
 \end{tabular}
 \end{table}
 
-\textbf{Stufe 3 – Hintergrund-Thread statt Einzelaufnahmen.}
+\textbf{Stufe 3 – Hintergrund-Threads statt Einzelaufnahmen.}
 In der finalen Implementierung wird die Kamera nicht mehr per Einzelaufnahme
-abgefragt, sondern über den in Abschnitt~\ref{sec:videostream} beschriebenen
-Hintergrund-Thread betrieben. Da dieser den Videostream kontinuierlich liest und
-Erkennung sowie Frame-Abruf zusammenführt, entfällt der Overhead der
-Kamerainitialisierung bei jedem Bildabruf. Die Ergebnisse sind in
+abgefragt, sondern über die in Abschnitt~\ref{sec:videostream} beschriebenen
+zwei Hintergrund-Threads betrieben. Der Stream-Thread liest den Videostream
+kontinuierlich, der Detection-Thread führt die Ballerkennung darauf aus.
+Dadurch entfällt der Overhead der Kamerainitialisierung bei jedem Bildabruf. Die Ergebnisse sind in
 Tabelle~\ref{tab:latenz3} dargestellt. Die Gesamtlatenz sank auf
 im Mittel \SI{40{,}52}{\milli\second}, was einer Bildrate von 24{,}68\,FPS
 entspricht. Die Erkennungsrate betrug 100{,}0\,\%.
