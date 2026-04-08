@@ -788,7 +788,7 @@ auf eine kleinere Auflösung skaliert. Dadurch verringert sich die Anzahl der
 zu verarbeitenden Pixel weiter, was die Detektionszeit deutlich reduziert.
 Der dabei entstehende Genauigkeitsverlust ist für den Regelkreis vernachlässigbar.
 
-\section{Videostream und Frame-Auswahl}
+\section{Hintergrund-Thread und Frame-Auswahl}
 \label{sec:videostream}
 
 Die Kamera liefert einen kontinuierlichen Videostream. Eine naive Umsetzung
@@ -797,12 +797,12 @@ lesen. Je nachdem wie schnell der Regler läuft und wie
 voll der Puffer ist, könnte er ein Bild bekommen, das bereits mehrere
 Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbewegt.
 
-Dieses Problem wird anders gelöst. Ein dedizierter Stream-Thread liest den
-Videostream der Kamera in einer Endlosschleife und überschreibt dabei
-kontinuierlich eine gemeinsame Variable mit dem jeweils neuesten Frame.
-Alte Frames werden dabei implizit verworfen. Wenn der Regler ein Bild anfragt,
-liest er genau diese Variable und erhält damit immer den aktuellsten Stand,
-unabhängig davon, wann er fragt.
+Dieses Problem wird anders gelöst. Ein dedizierter Hintergrund-Thread holt
+in einer Endlosschleife neue Frames von der Kamera und führt direkt im selben
+Thread die Ballerkennung durch. Das Ergebnis -- eine \texttt{BallMeasurement}-Instanz
+mit Position, Radius und Zeitstempel -- wird in einer Lock-gesicherten Variable
+gespeichert. Wenn der Regler eine neue Messung braucht, liest er diese Variable
+über \texttt{get\_last\_measurement()} aus. Der Aufruf blockiert nie.
 
 \begin{figure}[h]
   \centering
@@ -812,9 +812,9 @@ unabhängig davon, wann er fragt.
       mem/.style={draw, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center, fill=gray!10},
       arr/.style={-{Stealth}, thick},
     ]
-    \node[box] (cam) {\textbf{Stream-Thread}\\{\small liest Videostream,}\\{\small verwirft alte Frames}};
-    \node[mem, right=of cam] (buf) {\textbf{Aktuellstes Frame}\\{\small (gemeinsamer Speicher,}\\{\small Lock-gesichert)}};
-    \node[box, right=of buf] (ctrl) {\textbf{Regel-Thread}\\{\small liest bei Bedarf}};
+    \node[box] (cam) {\textbf{Kamera-Thread}\\{\small holt Frames,}\\{\small erkennt Ball}};
+    \node[mem, right=of cam] (buf) {\textbf{Letztes Ergebnis}\\{\small (gemeinsamer Speicher,}\\{\small Lock-gesichert)}};
+    \node[box, right=of buf] (ctrl) {\textbf{Regelkreis}\\{\small liest bei Bedarf}};
 
     \draw[arr] (cam) -- node[above]{\small schreibt} (buf);
     \draw[arr] (buf) -- node[above]{\small liest} (ctrl);
@@ -822,15 +822,13 @@ unabhängig davon, wann er fragt.
     \draw[arr, dashed] (cam.north) to[out=120,in=60,looseness=2]
       node[above]{\small kontinuierlich} (cam.north west);
   \end{tikzpicture}
-  \caption{Stream-Thread und Regel-Thread greifen über einen gemeinsamen,
-  Lock-gesicherten Speicherplatz auf das jeweils aktuellste Frame zu}
+  \caption{Kamera-Thread und Regelkreis greifen über einen gemeinsamen,
+  Lock-gesicherten Speicherplatz auf das jeweils aktuellste Ergebnis zu}
 \end{figure}
 
-Damit Stream-Thread und Regel-Thread nicht gleichzeitig auf denselben
+Damit Kamera-Thread und Regelkreis nicht gleichzeitig auf denselben
 Speicherplatz zugreifen, wird der Zugriff über ein Lock abgesichert. Ein Lock
 stellt sicher, dass immer nur ein Thread gleichzeitig lesen oder schreiben darf.
-So kann es nicht passieren, dass der Regler ein halb-überschriebenes Bild liest,
-während der Stream-Thread gerade schreibt.
 
 
 \section{Zustandsschätzung}
@@ -853,8 +851,12 @@ indem die Positionsänderung durch die vergangene Zeit geteilt wird:
   v_y = \frac{y_{\text{neu}} - y_{\text{alt}}}{\Delta t}
 \]
 
-Zusätzlich wird der Betrag der Gesamtgeschwindigkeit berechnet:
-$v = \sqrt{v_x^2 + v_y^2}$.
+Da der Regelkreis mit 120\,Hz läuft, die Kamera aber nur etwa 25\,FPS liefert,
+fragt der Regler häufiger nach als neue Bilder ankommen. In diesem Fall gibt
+\texttt{BallTracker.get()} das zuletzt berechnete Ergebnis erneut zurück,
+setzt dabei aber \texttt{is\_new\_frame = False}. Der Regler kann so zwischen
+echten neuen Messungen und wiederholten Ausgaben unterscheiden und bei
+\texttt{is\_new\_frame = False} eine Positions-Prädiktion anwenden.
 
 Wird kein Ball erkannt oder liegt noch keine vorherige Messung vor,
 gibt \texttt{BallTracker} einen Zustand mit \texttt{valid = False} zurück.
@@ -868,11 +870,11 @@ Der vollständige Ausgabe-Datensatz setzt sich wie folgt zusammen.
   \toprule
   Feld & Einheit & Bedeutung \\
   \midrule
-  \texttt{x}, \texttt{y}     & px       & Position relativ zur Bildmitte \\
-  \texttt{vx}, \texttt{vy}   & px/s     & Geschwindigkeit in X- und Y-Richtung \\
-  \texttt{v}                 & px/s     & Betrag der Gesamtgeschwindigkeit \\
-  \texttt{dt}                & s        & Zeit seit der letzten Messung \\
-  \texttt{valid}             & Bool.    & \texttt{True} wenn Ball erkannt wurde \\
+  \texttt{x}, \texttt{y}         & px    & Position relativ zur Bildmitte \\
+  \texttt{vx}, \texttt{vy}       & px/s  & Geschwindigkeit in X- und Y-Richtung \\
+  \texttt{is\_new\_frame}        & –     & \texttt{True} bei neuem Kamera-Frame, \texttt{False} wenn Regler schneller als Kamera \\
+  \texttt{timestamp\_s}          & s     & Zeitstempel der Bildaufnahme \\
+  \texttt{valid}                 & Bool. & \texttt{True} wenn Ball erkannt wurde \\
   \bottomrule
 \end{tabular}
 \end{center}
@@ -942,11 +944,11 @@ im Mittel \SI{62,87}{\milli\second}, die Gesamtlatenz auf
 \end{tabular}
 \end{table}
 
-\textbf{Stufe 3 – Stream-Thread statt Einzelaufnahmen.}
+\textbf{Stufe 3 – Hintergrund-Thread statt Einzelaufnahmen.}
 In der finalen Implementierung wird die Kamera nicht mehr per Einzelaufnahme
 abgefragt, sondern über den in Abschnitt~\ref{sec:videostream} beschriebenen
-Stream-Thread betrieben. Da dieser den Videostream kontinuierlich liest und
-immer nur das aktuellste Frame vorhält, entfällt der Overhead der
+Hintergrund-Thread betrieben. Da dieser den Videostream kontinuierlich liest und
+Erkennung sowie Frame-Abruf zusammenführt, entfällt der Overhead der
 Kamerainitialisierung bei jedem Bildabruf. Die Ergebnisse sind in
 Tabelle~\ref{tab:latenz3} dargestellt. Die Gesamtlatenz sank auf
 im Mittel \SI{40{,}52}{\milli\second}, was einer Bildrate von 24{,}68\,FPS
@@ -954,7 +956,7 @@ entspricht. Die Erkennungsrate betrug 100{,}0\,\%.
 
 \begin{table}[h]
 \centering
-\caption{Latenzmessung Stufe 3 – Stream-Thread statt Einzelaufnahmen}
+\caption{Latenzmessung Stufe 3 – Hintergrund-Thread statt Einzelaufnahmen}
 \label{tab:latenz3}
 \begin{tabular}{lrrrrrr}
   \toprule
