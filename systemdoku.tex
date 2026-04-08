@@ -177,7 +177,7 @@ eine Bibliothek die nur auf dem Pi verfügbar ist. Der \texttt{MockServoDriver}
 hingegen enthält keinen Hardware-Import und gibt die berechneten Winkel
 lediglich auf der Konsole aus. Er kann auf jedem Rechner ausgeführt werden.
 
-Um das System auf dem Laptop zu testen, reicht es in \texttt{main\_control.py}
+Um das System auf dem Laptop zu testen, reicht es in \texttt{main.py}
 den \texttt{PCA9685Driver} durch den \texttt{MockServoDriver} zu ersetzen.
 Der Rest des Codes bleibt unverändert, weil \texttt{Platform} nur gegen
 das abstrakte Interface arbeitet und nicht gegen eine konkrete Implementierung.
