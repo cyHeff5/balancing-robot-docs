@@ -391,9 +391,10 @@ Die Grenzwerte orientieren sich an den für Blau typischen HSV-Standardwerten~\c
 \section{BallDetectorRuntime}
 
 \texttt{BallDetectorRuntime} übernimmt Kamerazugriff und Ballerkennung.
-Ein Hintergrund-Thread greift kontinuierlich Frames und führt die
-Erkennung direkt durch. Das Ergebnis steht über \texttt{get\_last\_measurement()}
-jederzeit bereit.
+Zwei Hintergrund-Threads laufen parallel: der \textbf{Stream-Thread} holt
+kontinuierlich neue Frames von der Kamera, der \textbf{Detection-Thread}
+wartet auf neue Frames und führt die Ballerkennung durch.
+Das Ergebnis steht über \texttt{get\_last\_measurement()} jederzeit bereit.
 
 \subsection*{Konstruktor}
 
@@ -425,11 +426,11 @@ BallDetectorRuntime(hsv_range, frame_size=(640, 480),
   \toprule
   Methode & Rückgabe & Beschreibung \\
   \midrule
-  \texttt{start()} & – & Startet die Kamera und den Hintergrund-Thread. \\
+  \texttt{start()} & – & Startet die Kamera und die zwei Hintergrund-Threads. \\
   \addlinespace
-  \texttt{stop()} & – & Stoppt den Hintergrund-Thread und gibt die Kamera frei. \\
+  \texttt{stop()} & – & Stoppt die Hintergrund-Threads und gibt die Kamera frei. \\
   \addlinespace
-  \texttt{get\_last\_measurement()} & \texttt{BallMeasurement | None} & Letztes Erkennungsergebnis des Hintergrund-Threads. \\
+  \texttt{get\_last\_measurement()} & \texttt{BallMeasurement | None} & Letztes Erkennungsergebnis des Detection-Threads. \\
   \addlinespace
   \texttt{get\_latest\_frame()} & \texttt{np.ndarray | None} & Gibt den zuletzt aufgenommenen Frame zurück. \\
   \addlinespace
@@ -559,9 +560,12 @@ verschiedene Positionen zu fahren.
 \begin{lstlisting}[language={}]
 {
   "positions": [
-    { "name": "center",     "roll_deg":  0.0, "pitch_deg":  0.0, "settle_s": 1.5 },
-    { "name": "tilt_left",  "roll_deg": -10.0, "pitch_deg":  0.0, "settle_s": 1.5 },
-    { "name": "tilt_right", "roll_deg":  10.0, "pitch_deg":  0.0, "settle_s": 1.5 }
+    { "name": "flat",      "roll_deg":  0.0, "pitch_deg":  0.0, "settle_s": 1.5 },
+    { "name": "x_pos_8",  "roll_deg":  0.0, "pitch_deg":  8.0, "settle_s": 1.5 },
+    { "name": "x_neg_8",  "roll_deg":  0.0, "pitch_deg": -8.0, "settle_s": 1.5 },
+    { "name": "y_pos_8",  "roll_deg":  8.0, "pitch_deg":  0.0, "settle_s": 1.5 },
+    ...
+    { "name": "flat_end", "roll_deg":  0.0, "pitch_deg":  0.0, "settle_s": 1.5 }
   ]
 }
 \end{lstlisting}
