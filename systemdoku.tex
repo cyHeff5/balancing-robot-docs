@@ -1076,7 +1076,9 @@ Initial zeigten die Servomotoren ein träges Ansprechverhalten mit massiven Totz
 
 \subsection{Limitation der Regelzykluszeit (Threading)}
 
-In der ersten Software-Iteration lief die Bildverarbeitung (Ball-Detektion) sequenziell zur Regelschleife. Da die Kamera maximal 30 Frames pro Sekunde liefert, limitierte dies den Regler auf etwa 30\,Hz, was für eine stabile Regelung nicht ausreicht. Um dies zu beheben, wurde die Softwarearchitektur auf Multithreading umgestellt. Die Kamera-Schleife läuft nun entkoppelt in einem Hintergrund-Thread. Der Regler läuft stabil mit $120$\,Hz. Liegt kein neues Kamerabild vor, prädiziert der Regler die aktuelle Position des Balls basierend auf den letzten Geschwindigkeitsvektoren, was eine hochfrequente, flüssige Regelung ermöglicht.
+Der Videostream der Kamera lief bereits von Beginn an in einem eigenen Hintergrund-Thread. In der ersten Software-Iteration wurde die Ballerkennung jedoch noch im Regelloop selbst ausgeführt. Da die Erkennung pro Frame etwa \SI{28}{\milli\second} dauert, limitierte dies den Regler auf die Kameraframerate von ca. 25\,Hz, was für eine stabile Regelung nicht ausreicht.
+
+Die Lösung bestand darin, die Ballerkennung ebenfalls in einen eigenen Hintergrund-Thread auszulagern. Damit laufen nun zwei Threads parallel: ein Stream-Thread, der kontinuierlich Frames von der Kamera holt und immer den neuesten Frame vorhält, sowie ein Detection-Thread, der darauf wartet und die Erkennung durchführt. Der Regelloop liest das fertige Ergebnis nur noch ab und führt selbst keine Bildverarbeitung mehr durch. Er läuft dadurch stabil mit $120$\,Hz. Liegt kein neues Kamerabild vor, prädiziert der Regler die aktuelle Position des Balls anhand der letzten Geschwindigkeitsvektoren.
 
 \subsection{Einfluss der Beleuchtung auf das Vision-System}
 
