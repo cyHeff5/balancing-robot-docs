@@ -386,6 +386,8 @@ hsv_range = HsvRange(
 )
 \end{lstlisting}
 
+Die Grenzwerte orientieren sich an den für Blau typischen HSV-Standardwerten~\cite{opencv_colorspaces} und wurden für die Lichtverhältnisse angepasst.
+
 \section{BallDetectorRuntime}
 
 \texttt{BallDetectorRuntime} übernimmt Kamerazugriff und Ballerkennung.
@@ -623,5 +625,15 @@ Mit dem Demo-Script lässt sich das interaktiv prüfen:
 \begin{lstlisting}
 python -m tools.demo --no-camera
 \end{lstlisting}
+
+\begin{thebibliography}{9}
+
+\bibitem{opencv_colorspaces}
+OpenCV Development Team,
+\textit{Changing Colorspaces},
+OpenCV 4.x Documentation,
+\url{https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html}
+
+\end{thebibliography}
 
 \end{document}
