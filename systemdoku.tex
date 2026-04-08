@@ -87,7 +87,7 @@
 
 Im Rahmen der Lehrveranstaltung Industrielle Robotik an der HTW Saar (WiSe 2025/26) wurde ein ballbalancierender Roboter entwickelt. Ziel des Projekts ist es, einen Ball auf einer beweglichen Plattform mithilfe eines geschlossenen Regelkreises zu stabilisieren.
 
-Die Plattform wird von drei Servomotoren über eine Tripod-Mechanik gekippt. Eine Kamera erfasst kontinuierlich das Bild der Plattform; eine Bildverarbeitungskomponente erkennt die aktuelle Ballposition. Ein PD-Regler berechnet daraus die notwendigen Kippwinkel der Plattform, die über die inverse Kinematik in Servowinkel umgerechnet und an die Motoren übertragen werden.
+Die Plattform wird von drei Servomotoren über eine Tripod-Mechanik gekippt. Eine Kamera erfasst kontinuierlich das Bild der Plattform; eine Bildverarbeitungskomponente erkennt die aktuelle Ballposition. Ein PID-Regler berechnet daraus die notwendigen Kippwinkel der Plattform, die über die inverse Kinematik in Servowinkel umgerechnet und an die Motoren übertragen werden.
 
 Als Recheneinheit wird ein Raspberry Pi eingesetzt, auf dem alle Komponenten (Bildverarbeitung, Regelung und Servoansteuerung) in Echtzeit ausgeführt werden.
 
@@ -1017,9 +1017,9 @@ Durch Koeffizientenvergleich lassen sich die optimalen Reglerparameter $K_p$ und
 \begin{equation}
     K_p = \frac{\omega_n^2}{K_{\text{sys}}}, \quad K_d = \frac{2\zeta\omega_n}{K_{\text{sys}}}
 \end{equation}
-Für ein ballbalancierendes System wird ein aperiodischer Grenzfall gewählt ($\zeta = 1{,}0$), um ein Überschwingen der Kugel über den Sollwert zu verhindern. Die Eigenkreisfrequenz $\omega_n$ ist durch die Abtastrate des Systems limitiert und wurde anwendungsspezifisch gewählt.
+Für ein ballbalancierendes System wird ein aperiodischer Grenzfall gewählt ($\zeta = 1{,}0$), um ein Überschwingen der Kugel über den Sollwert zu verhindern. Die Eigenkreisfrequenz wurde auf $\omega_n \approx 3\,\text{rad/s}$ festgelegt. Mit $K_{\text{sys}} \approx 7{,}007$ ergeben sich die skalierten Reglerparameter zu $K_p \approx 0{,}05$ und $K_d \approx 0{,}033$.
 
-Da die reale Strecke durch Coulombsche Reibung und Haftreibung gestört wird, bleibt der Ball bei kleinen Positionsfehlern stehen. Der Regler wurde daher empirisch um einen Integralanteil ($K_i$) erweitert, der diese konstanten Störgrößen ausregelt.
+Da die reale Strecke durch Coulombsche Reibung und Haftreibung gestört wird, bleibt der Ball bei kleinen Positionsfehlern stehen. Der Regler wurde daher empirisch um einen Integralanteil ($K_i = 0{,}008$) erweitert, der diese konstanten Störgrößen ausregelt.
 
 \section{Simulation in MATLAB/Simulink}
 
@@ -1047,13 +1047,31 @@ Die simulierte Sprungantwort (Abbildung~\ref{fig:sprungantwort}) zeigt ein robus
 
 \section{Diskreter Regelloop und Hardware-Implementierung}
 
-Die validierte Reglerstruktur wurde als zeitdiskreter Algorithmus in Python portiert. Der PID-Regler läuft in \texttt{main\_control.py} in einer definierten Zeitschleife. Er berechnet aus der Positionsabweichung und der aktuellen Geschwindigkeit die benötigten Beschleunigungswerte $a_{x,\text{req}}$ und $a_{y,\text{req}}$. Die Geschwindigkeit wird dabei als negativer D-Anteil genutzt, um den Derivative Kick bei Sollwertsprüngen zu vermeiden.
+Die validierte Reglerstruktur wurde als zeitdiskreter Algorithmus in Python portiert. Der PID-Regler läuft in \texttt{main.py} in einer definierten Zeitschleife. Er berechnet aus der Positionsabweichung und der aktuellen Geschwindigkeit die benötigten Beschleunigungswerte $a_{x,\text{req}}$ und $a_{y,\text{req}}$. Die Geschwindigkeit wird dabei als negativer D-Anteil genutzt, um den Derivative Kick bei Sollwertsprüngen zu vermeiden.
 
 Diese Vorgaben werden auf maximal $\pm\SI{5{,}0}{\metre\per\second\squared}$ begrenzt, was ca. $30^\circ$ Plattenneigung entspricht, und anschließend an die Kinematik übergeben. Dort werden die Beschleunigungen in die benötigten Kippwinkel der Plattform umgerechnet:
 \begin{equation}
     \theta_x = -\arcsin\!\left(\frac{a_{y,\text{req}}}{g}\right), \quad \theta_y = \arcsin\!\left(\frac{a_{x,\text{req}}}{g}\right)
 \end{equation}
+Um hochfrequente Schwingungen und mechanische Vibrationen der Servomotoren zu dämpfen, werden die berechneten Winkel $\theta_x$ und $\theta_y$ anschließend durch einen zeitdiskreten exponentiellen Tiefpassfilter ($\alpha = 0{,}06$) geglättet, bevor sie an die Servos gesendet werden.
+
 Diese Winkel dienen der inversen Kinematik als Eingabe, um die Stellwinkel der drei Servomotoren zu berechnen. Damit ist der vollständige Regelkreis von der visuellen Erfassung des Balls bis zur mechanischen Reaktion der Servomotoren geschlossen.
+
+\section{Praktische Herausforderungen und Optimierungen}
+
+Während der Inbetriebnahme des realen Systems traten mehrere physikalische und softwaretechnische Limitierungen auf, die iterativ gelöst werden mussten.
+
+\subsection{Hardware-Totzeiten durch Spannungsversorgung}
+
+Initial zeigten die Servomotoren ein träges Ansprechverhalten mit massiven Totzeiten. Die Ursache lag in der Verkabelung: Die Versorgungsspannung der drei Servomotoren wurde direkt über den PWM-Generator (PCA9685) bezogen. Bei schnellen Stellbewegungen zogen die Motoren zu viel Strom, was zu Spannungseinbrüchen führte. Die Lösung bestand darin, die Versorgungsspannung der Servos direkt an einen leistungsstarken 5-V-Spannungsregler anzuschließen. Der PCA9685 liefert nun ausschließlich die PWM-Steuersignale, wodurch die künstliche Totzeit vollständig eliminiert wurde.
+
+\subsection{Limitation der Regelzykluszeit}
+
+In der ersten Software-Iteration lief die Bildverarbeitung sequenziell zur Regelschleife. Da die Kamera maximal 30 Frames pro Sekunde liefert, limitierte dies den Regler auf etwa 30\,Hz, was für eine stabile Regelung nicht ausreicht. Die Softwarearchitektur wurde daher auf Multithreading umgestellt. Die Kamera-Schleife läuft nun entkoppelt in einem Hintergrund-Thread, der Regler läuft stabil mit 120\,Hz. Liegt kein neues Kamerabild vor, prädiziert der Regler die aktuelle Ballposition anhand der letzten Geschwindigkeitsvektoren.
+
+\subsection{Einfluss der Beleuchtung auf das Vision-System}
+
+Eine zu starke Beleuchtung führte zu Reflexionen auf der Balloberfläche, durch die der HSV-Farbfilter den Ball zeitweise nicht erkannte. Die daraus resultierenden sprunghaften Positionsänderungen regten den D-Anteil des Reglers stark an und verursachten erratische Motorbewegungen. Dies wurde durch eine Anpassung der Lichtverhältnisse sowie durch den Tiefpassfilter aus Abschnitt~\ref{sec:regelloop} kompensiert.
 
 \begin{thebibliography}{9}
 
