@@ -799,8 +799,8 @@ Frames alt ist. Der Ball hat sich in der Zwischenzeit vielleicht schon weiterbew
 
 Dieses Problem wird anders gelöst. Ein dedizierter Hintergrund-Thread holt
 in einer Endlosschleife neue Frames von der Kamera und führt direkt im selben
-Thread die Ballerkennung durch. Das Ergebnis -- eine \texttt{BallMeasurement}-Instanz
-mit Position, Radius und Zeitstempel -- wird in einer Lock-gesicherten Variable
+Thread die Ballerkennung durch. Das Ergebnis, eine \texttt{BallMeasurement}-Instanz
+mit Position, Radius und Zeitstempel, wird in einer Lock-gesicherten Variable
 gespeichert. Wenn der Regler eine neue Messung braucht, liest er diese Variable
 über \texttt{get\_last\_measurement()} aus. Der Aufruf blockiert nie.
 
