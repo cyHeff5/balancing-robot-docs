@@ -977,6 +977,7 @@ entspricht. Die Erkennungsrate betrug 100{,}0\,\%.
 In diesem Kapitel wird die Auslegung und Implementierung der Positionsregelung für den Ball-Balancing-Roboter beschrieben. Ursprünglich war ein reiner PD-Regler vorgesehen, jedoch zeigte sich in der physikalischen Modellierung und späteren Praxis schnell, dass ein I-Anteil zwingend erforderlich ist, um stationäre Regelabweichungen durch asymmetrische Reibung zu kompensieren. Die Entwicklung gliedert sich in die Aufbereitung der Sensordaten, die analytische Reglerauslegung, die Verifikation in der Simulation sowie die finale hardwarenahe Implementierung. Bearbeitet wurde dieser Teil von Hanan Jawesh.
 
 \section{Koordinatentransformation des Kamerabildes}
+\label{sec:koordinatentransformation}
 
 Bevor die Kameradaten im Regelkreis verwendet werden können, muss sichergestellt werden, dass das zweidimensionale Koordinatensystem der Kamera exakt mit dem physikalischen Koordinatensystem der Aktuatorik übereinstimmt. Eine mechanische Fehlstellung der Kamera führt zu einer unerwünschten Kreuzkopplung der X- und Y-Achsen im Regler.
 
@@ -985,6 +986,7 @@ Um dies zu korrigieren, wurde eine softwareseitige Rotationskorrektur implementi
     \theta_{\text{ist}} = \text{atan2}(p_{2,y} - p_{1,y}, p_{2,x} - p_{1,x})
 \end{equation}
 Da die physische Bewegung exakt auf der Y-Achse ($90^\circ$ bzw. $\frac{\pi}{2}$) stattfand, ergibt sich der benötigte Rotationswinkel zur Korrektur aus $\Delta\theta = \frac{\pi}{2} - \theta_{\text{ist}}$.
+
 Jede neu erfasste Position $(x, y)$ sowie die ermittelten Geschwindigkeiten $(v_x, v_y)$ werden in Echtzeit über eine 2D-Rotationsmatrix um den Bildmittelpunkt gedreht:
 \begin{equation}
     \begin{pmatrix} x_{\text{korr}} \\ y_{\text{korr}} \end{pmatrix} =
@@ -994,10 +996,9 @@ Jede neu erfasste Position $(x, y)$ sowie die ermittelten Geschwindigkeiten $(v_
 Diese Transformation entkoppelt die Achsen und garantiert, dass ein Stellsignal des Reglers in X-Richtung ausschließlich eine Bewegung der Plattform in X-Richtung nach sich zieht.
 
 \section{Systemmodellierung und analytische Reglerauslegung}
+\label{sec:pid_entwurf}
 
-Um die optimalen Parameter für den Regler analytisch bestimmen zu können, muss die Regelstrecke zunächst mathematisch modelliert werden. Eine Kugel, die auf einer geneigten Ebene rollt, erfährt nicht die volle Erdbeschleunigung, da ein Teil der potentiellen Energie in Rotationsenergie übergeht.
-
-Für eine Vollkugel mit der Masse $m$, dem Radius $r$ und dem Trägheitsmoment $J = \frac{2}{5} m r^2$ ergibt sich aus dem Drallsatz und dem Newtonschen Aktionsprinzip die lineare Beschleunigung $a$ in Abhängigkeit des Neigungswinkels $\alpha$:
+Um die optimalen Parameter für den Regler analytisch bestimmen zu können, muss die Regelstrecke (Plant) zunächst mathematisch modelliert werden. Eine Kugel, die auf einer geneigten Ebene rollt, erfährt nicht die volle Erdbeschleunigung, da ein Teil der potentiellen Energie in Rotationsenergie übergeht. Für eine Vollkugel mit der Masse $m$, dem Radius $r$ und dem Trägheitsmoment $J = \frac{2}{5} m r^2$ ergibt sich aus dem Drallsatz und dem Newtonschen Aktionsprinzip die lineare Beschleunigung $a$ in Abhängigkeit des Neigungswinkels $\alpha$:
 \begin{equation}
     a = g \cdot \sin(\alpha) \cdot \left( \frac{m}{m + \frac{J}{r^2}} \right) = \frac{5}{7} g \cdot \sin(\alpha)
 \end{equation}
@@ -1009,69 +1010,77 @@ Für die Auslegung eines PD-Reglers mit der Übertragungsfunktion $C(s) = K_p + 
 \begin{equation}
     T(s) = \frac{P(s)C(s)}{1 + P(s)C(s)} = \frac{K_{\text{sys}} (K_d s + K_p)}{s^2 + K_{\text{sys}} K_d s + K_{\text{sys}} K_p}
 \end{equation}
-Nach der Methode der Polvorgabe~\cite{unbehauen2008} wird das Nennerpolynom mit der charakteristischen Gleichung eines idealen Verzögerungsgliedes zweiter Ordnung gleichgesetzt:
+Nach der Methode der \textbf{Polvorgabe} (Pole Placement)~\cite{unbehauen2008} wird das Nennerpolynom mit der charakteristischen Gleichung eines idealen Verzögerungsgliedes 2. Ordnung (PT$_2$-Glied) gleichgesetzt:
 \begin{equation}
     s^2 + K_{\text{sys}} K_d s + K_{\text{sys}} K_p = s^2 + 2\zeta\omega_n s + \omega_n^2
 \end{equation}
-Durch Koeffizientenvergleich lassen sich die optimalen Reglerparameter $K_p$ und $K_d$ in Abhängigkeit der gewünschten Dynamik direkt berechnen:
+Durch Koeffizientenvergleich lassen sich die optimalen Reglerparameter $K_p$ und $K_d$ berechnen:
 \begin{equation}
     K_p = \frac{\omega_n^2}{K_{\text{sys}}}, \quad K_d = \frac{2\zeta\omega_n}{K_{\text{sys}}}
 \end{equation}
-Für ein ballbalancierendes System wird ein aperiodischer Grenzfall gewählt ($\zeta = 1{,}0$), um ein Überschwingen der Kugel über den Sollwert zu verhindern. Die Eigenkreisfrequenz wurde auf $\omega_n \approx 3\,\text{rad/s}$ festgelegt. Mit $K_{\text{sys}} \approx 7{,}007$ ergeben sich die skalierten Reglerparameter zu $K_p \approx 0{,}05$ und $K_d \approx 0{,}033$.
 
-Da die reale Strecke durch Coulombsche Reibung und Haftreibung gestört wird, bleibt der Ball bei kleinen Positionsfehlern stehen. Der Regler wurde daher empirisch um einen Integralanteil ($K_i = 0{,}008$) erweitert, der diese konstanten Störgrößen ausregelt.
+Für ein ballbalancierendes System wird der aperiodische Grenzfall gewählt ($\zeta = 1{,}0$), um ein Überschwingen der Kugel zu verhindern. Die Eigenkreisfrequenz $\omega_n$ (Schnelligkeit des Reglers) wurde anwendungsspezifisch auf $\omega_n \approx 3\,\text{rad/s}$ festgelegt. Mit $g = 9{,}81\,\text{m/s}^2$ ergibt sich $K_{\text{sys}} \approx 7{,}007$. Setzt man diese Werte ein, ergeben sich die Parameter zu:
+\begin{equation}
+    K_p = \frac{3^2}{7{,}007} \approx 1{,}28 \quad \rightarrow \quad \text{Hardware-skaliert:} \approx 0{,}05
+\end{equation}
+\begin{equation}
+    K_d = \frac{2 \cdot 1{,}0 \cdot 3}{7{,}007} \approx 0{,}85 \quad \rightarrow \quad \text{Hardware-skaliert:} \approx 0{,}033
+\end{equation}
+(Die Skalierung resultiert aus der gerätespezifischen Umrechnung von Einheiten im Programmcode.)
+
+\textbf{Die Notwendigkeit des I-Anteils:} Da die reale Strecke nicht ideal ist, sondern durch Coulomb'sche Reibung und Haftreibung (Losbrechmoment) gestört wird, bleibt der Ball bei kleinen Positionsfehlern stehen. Der Regler wurde daher empirisch um einen Integrator ($K_i = 0{,}008$) erweitert, der diese konstanten Störgrößen ausregelt.
 
 \section{Simulation in MATLAB/Simulink}
+\label{sec:simulation}
 
 Vor der Implementierung auf der Hardware wurde der Regler in MATLAB/Simulink verifiziert. Das Modell bildet die Nichtlinearitäten der Strecke (Haft- und Rollreibung) sowie Signaltotzeiten explizit ab.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{simulink_blockdiagramm.png}
-    \caption{Vollständiges Blockschaltbild der MATLAB/Simulink-Simulation inklusive Regler, Streckenmodell und Totzeitgliedern}
+    \caption{Vollständiges Blockschaltbild der MATLAB/Simulink-Simulation inklusive Regler, Ball-Physik (Plant) und Totzeitgliedern}
     \label{fig:simulink_modell}
 \end{figure}
 
-Die Simulation wurde mit einer festen Schrittweite von \SI{0{,}02}{\second} parametriert, was einer Arbeitsfrequenz von \SI{50}{\hertz} entspricht. Tests mit geringeren Frequenzen zeigten einen drastischen Stabilitätsverlust, was die geforderte Abtastrate physikalisch legitimiert.
+Die Simulation wurde mit einer festen Schrittweite von $0{,}02$\,s parametriert (entspricht $50$\,Hz). Tests mit geringeren Frequenzen zeigten einen drastischen Stabilitätsverlust. Um den Windup-Effekt des Integrators zu verhindern, wurde eine Limitierung (Clamping) implementiert. Überschreitet das Reglersignal eine Ausgangsbeschleunigung von $\pm 2{,}5$\,m/s$^2$, wird die Integration gestoppt. Zusätzlich wurde eine Systemtotzeit eingefügt.
 
-Um den Windup-Effekt des Integrators zu verhindern, wurde eine Limitierung (Clamping) implementiert. Überschreitet das Reglersignal eine Ausgangsbeschleunigung von $\pm\SI{2{,}5}{\metre\per\second\squared}$, wird die Integration gestoppt. Zusätzlich wurde eine Systemtotzeit von \SI{4}{\milli\second} eingefügt, um die Signalverarbeitungsdauer zu den PWM-Treibern realitätsnah abzubilden.
-
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{sprungantwort_scope.png}
-    \caption{Simulierte Sprungantwort des geregelten Systems auf der X- und Y-Achse bei \SI{50}{\hertz} Abtastrate}
+    \caption{Simulierte Sprungantwort des geregelten Systems auf der X- und Y-Achse bei $50$\,Hz Abtastrate}
     \label{fig:sprungantwort}
 \end{figure}
 
-Die simulierte Sprungantwort (Abbildung~\ref{fig:sprungantwort}) zeigt ein robustes Einregelverhalten der Kugel auf den gewünschten Sollwert ohne Dauerschwingung.
+Die simulierte Sprungantwort (Abbildung~\ref{fig:sprungantwort}) zeigt ein robustes Einregelverhalten der Kugel auf den Setpoint.
 
 \section{Diskreter Regelloop und Hardware-Implementierung}
+\label{sec:regelloop}
 
-Die validierte Reglerstruktur wurde als zeitdiskreter Algorithmus in Python portiert. Der PID-Regler läuft in \texttt{main.py} in einer definierten Zeitschleife. Er berechnet aus der Positionsabweichung und der aktuellen Geschwindigkeit die benötigten Beschleunigungswerte $a_{x,\text{req}}$ und $a_{y,\text{req}}$. Die Geschwindigkeit wird dabei als negativer D-Anteil genutzt, um den Derivative Kick bei Sollwertsprüngen zu vermeiden.
+Die validierte Reglerstruktur wurde als zeitdiskreter Algorithmus in Python portiert. Der PID-Controller berechnet aus der Positionsabweichung und der aktuellen Geschwindigkeit (als negativer D-Anteil zur Vermeidung des Derivative Kicks) die benötigten Beschleunigungswerte $a_{x,\text{req}}$ und $a_{y,\text{req}}$.
 
-Diese Vorgaben werden auf maximal $\pm\SI{5{,}0}{\metre\per\second\squared}$ begrenzt, was ca. $30^\circ$ Plattenneigung entspricht, und anschließend an die Kinematik übergeben. Dort werden die Beschleunigungen in die benötigten Kippwinkel der Plattform umgerechnet:
+Diese Vorgaben werden hart limitiert und an die Kinematik übergeben, wo sie in den benötigten Normalenvektor der Ebene umgewandelt werden:
 \begin{equation}
-    \theta_x = -\arcsin\!\left(\frac{a_{y,\text{req}}}{g}\right), \quad \theta_y = \arcsin\!\left(\frac{a_{x,\text{req}}}{g}\right)
+    \theta_x = -\arcsin\!\left(\frac{a_{y,\text{req}}}{0{,}7g}\right), \quad \theta_y = \arcsin\!\left(\frac{a_{x,\text{req}}}{0{,}7g}\right)
 \end{equation}
-Um hochfrequente Schwingungen und mechanische Vibrationen der Servomotoren zu dämpfen, werden die berechneten Winkel $\theta_x$ und $\theta_y$ anschließend durch einen zeitdiskreten exponentiellen Tiefpassfilter ($\alpha = 0{,}06$) geglättet, bevor sie an die Servos gesendet werden.
 
-Diese Winkel dienen der inversen Kinematik als Eingabe, um die Stellwinkel der drei Servomotoren zu berechnen. Damit ist der vollständige Regelkreis von der visuellen Erfassung des Balls bis zur mechanischen Reaktion der Servomotoren geschlossen.
+Um hochfrequente Schwingungen und mechanische Vibrationen der Servomotoren zu dämpfen, werden die berechneten Winkel $\theta_x$ und $\theta_y$ anschließend durch einen zeitdiskreten exponentiellen Tiefpassfilter (Low-Pass Filter, $\alpha = 0{,}06$) geglättet, bevor sie an die Servos gesendet werden.
 
 \section{Praktische Herausforderungen und Optimierungen}
+\label{sec:herausforderungen}
 
 Während der Inbetriebnahme des realen Systems traten mehrere physikalische und softwaretechnische Limitierungen auf, die iterativ gelöst werden mussten.
 
 \subsection{Hardware-Totzeiten durch Spannungsversorgung}
 
-Initial zeigten die Servomotoren ein träges Ansprechverhalten mit massiven Totzeiten. Die Ursache lag in der Verkabelung: Die Versorgungsspannung der drei Servomotoren wurde direkt über den PWM-Generator (PCA9685) bezogen. Bei schnellen Stellbewegungen zogen die Motoren zu viel Strom, was zu Spannungseinbrüchen führte. Die Lösung bestand darin, die Versorgungsspannung der Servos direkt an einen leistungsstarken 5-V-Spannungsregler anzuschließen. Der PCA9685 liefert nun ausschließlich die PWM-Steuersignale, wodurch die künstliche Totzeit vollständig eliminiert wurde.
+Initial zeigten die Servomotoren ein träges Ansprechverhalten mit massiven Totzeiten. Die Ursache lag in der Verkabelung: Die Versorgungsspannung der drei Servomotoren wurde direkt über den PWM-Generator (PCA9685) bezogen. Bei schnellen Stellbewegungen zogen die Motoren zu viel Strom, was zu Spannungseinbrüchen führte. Die Lösung bestand darin, die Versorgungsspannung der Servos direkt an einen leistungsstarken 5V-Spannungsregler anzuschließen. Der PCA9685 liefert nun ausschließlich die PWM-Steuersignale, wodurch die künstliche Totzeit vollständig eliminiert wurde.
 
-\subsection{Limitation der Regelzykluszeit}
+\subsection{Limitation der Regelzykluszeit (Threading)}
 
-In der ersten Software-Iteration lief die Bildverarbeitung sequenziell zur Regelschleife. Da die Kamera maximal 30 Frames pro Sekunde liefert, limitierte dies den Regler auf etwa 30\,Hz, was für eine stabile Regelung nicht ausreicht. Die Softwarearchitektur wurde daher auf Multithreading umgestellt. Die Kamera-Schleife läuft nun entkoppelt in einem Hintergrund-Thread, der Regler läuft stabil mit 120\,Hz. Liegt kein neues Kamerabild vor, prädiziert der Regler die aktuelle Ballposition anhand der letzten Geschwindigkeitsvektoren.
+In der ersten Software-Iteration lief die Bildverarbeitung (Ball-Detektion) sequenziell zur Regelschleife. Da die Kamera maximal 30 Frames pro Sekunde liefert, limitierte dies den Regler auf etwa 30\,Hz, was für eine stabile Regelung nicht ausreicht. Um dies zu beheben, wurde die Softwarearchitektur auf Multithreading umgestellt. Die Kamera-Schleife läuft nun entkoppelt in einem Hintergrund-Thread. Der Regler läuft stabil mit $120$\,Hz. Liegt kein neues Kamerabild vor, prädiziert der Regler die aktuelle Position des Balls basierend auf den letzten Geschwindigkeitsvektoren, was eine hochfrequente, flüssige Regelung ermöglicht.
 
 \subsection{Einfluss der Beleuchtung auf das Vision-System}
 
-Eine zu starke Beleuchtung führte zu Reflexionen auf der Balloberfläche, durch die der HSV-Farbfilter den Ball zeitweise nicht erkannte. Die daraus resultierenden sprunghaften Positionsänderungen regten den D-Anteil des Reglers stark an und verursachten erratische Motorbewegungen. Dies wurde durch eine Anpassung der Lichtverhältnisse sowie durch den Tiefpassfilter aus Abschnitt~\ref{sec:regelloop} kompensiert.
+Eine zu starke Beleuchtung führte zu Reflexionen auf der Balloberfläche. Der HSV-Farbfilter erkannte den Ball zeitweise nicht, was zu sprunghaften Positionsänderungen im Code führte. Diese Sprünge regten den D-Anteil des Reglers extrem an und verursachten erratische Motorbewegungen. Dies wurde durch eine optische Anpassung der Lichtverhältnisse sowie durch den in Abschnitt~\ref{sec:regelloop} beschriebenen Low-Pass-Filter zuverlässig kompensiert.
 
 \begin{thebibliography}{9}
 
