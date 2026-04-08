@@ -412,7 +412,7 @@ BallDetectorRuntime(hsv_range, frame_size=(640, 480),
   \midrule
   \texttt{hsv\_range} & \texttt{HsvRange} & – & Farbbereich des Balls im HSV-Farbraum \\
   \texttt{frame\_size} & \texttt{tuple[int, int]} & \texttt{(640, 480)} & Auflösung der Kamera in Pixeln \\
-  \texttt{input\_color\_order} & \texttt{str} & \texttt{"BGR"} & Farbkanal-Reihenfolge der Kamera; \texttt{"RGB"} für Picamera2 \\
+  \texttt{input\_color\_order} & \texttt{str} & \texttt{"BGR"} & Farbkanal-Reihenfolge der Kamera; Standard \texttt{"BGR"} auch für Picamera2 \\
   \texttt{use\_roi\_tracking} & \texttt{bool} & \texttt{False} & Aktiviert ROI-Tracking für schnellere Erkennung \\
   \texttt{roi\_size} & \texttt{int} & \texttt{600} & Kantenlänge des ROI-Fensters in Pixeln \\
   \texttt{roi\_miss\_limit} & \texttt{int} & \texttt{5} & Anzahl aufeinanderfolgender Fehldetektionen im ROI, bevor auf das Vollbild zurückgefallen wird \\
