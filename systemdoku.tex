@@ -850,12 +850,19 @@ Alle Positionswerte beziehen sich auf ein einheitliches Koordinatensystem
 mit dem Ursprung in der Bildmitte. Positive $x$-Richtung zeigt nach rechts,
 positive $y$-Richtung nach oben. Die Werte werden in Pixeln angegeben.
 
-Die Geschwindigkeit wird aus zwei aufeinanderfolgenden Messungen berechnet,
+Die Rohgeschwindigkeit wird aus zwei aufeinanderfolgenden Messungen berechnet,
 indem die Positionsänderung durch die vergangene Zeit geteilt wird:
 
 \[
-  v_x = \frac{x_{\text{neu}} - x_{\text{alt}}}{\Delta t}, \qquad
-  v_y = \frac{y_{\text{neu}} - y_{\text{alt}}}{\Delta t}
+  v_x^{\text{roh}} = \frac{x_{\text{neu}} - x_{\text{alt}}}{\Delta t}, \qquad
+  v_y^{\text{roh}} = \frac{y_{\text{neu}} - y_{\text{alt}}}{\Delta t}
+\]
+
+Um Messrauschen zu dämpfen, wird die Rohgeschwindigkeit anschließend mit einem
+exponentiellen gleitenden Mittelwert (EMA) gefiltert:
+
+\[
+  v_x \leftarrow \alpha \cdot v_x^{\text{roh}} + (1 - \alpha) \cdot v_x, \qquad \alpha = 0{,}3
 \]
 
 Da der Regelkreis mit 120\,Hz läuft, die Kamera aber nur etwa 25\,FPS liefert,
@@ -878,7 +885,9 @@ Der vollständige Ausgabe-Datensatz setzt sich wie folgt zusammen.
   Feld & Einheit & Bedeutung \\
   \midrule
   \texttt{x}, \texttt{y}         & px    & Position relativ zur Bildmitte \\
-  \texttt{vx}, \texttt{vy}       & px/s  & Geschwindigkeit in X- und Y-Richtung \\
+  \texttt{vx}, \texttt{vy}       & px/s  & EMA-gefilterte Geschwindigkeit in X- und Y-Richtung \\
+  \texttt{v}                     & px/s  & Betrag der Geschwindigkeit \\
+  \texttt{dt}                    & s     & Zeit seit dem letzten Kamera-Frame \\
   \texttt{is\_new\_frame}        & –     & \texttt{True} bei neuem Kamera-Frame, \texttt{False} wenn Regler schneller als Kamera \\
   \texttt{timestamp\_s}          & s     & Zeitstempel der Bildaufnahme \\
   \texttt{valid}                 & Bool. & \texttt{True} wenn Ball erkannt wurde \\
